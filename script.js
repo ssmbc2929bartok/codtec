@@ -195,26 +195,37 @@ function finishGame() {
         ? ((totalTyped / (totalTyped + missCount)) * 100).toFixed(1)
         : 0;
 
+    // --- シェア用メッセージの作成 ---
+    const scoreResult = currentMode === 'time-trial'
+        ? `TIME: ${finalTime.toFixed(2)}s`
+        : `SCORE: ${wordIdx} WORDS`;
+
+    const shareText = encodeURIComponent(
+        `DevType [${currentMode}] をクリアしました！\n` +
+        `結果: ${scoreResult}\n` +
+        `速度: ${kpm} KPM / 正確率: ${accuracy}%\n`
+    );
+    const shareUrl = encodeURIComponent("https://ssmbar.com/codtec/");
+    const xLink = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}&hashtags=DevType,ssmbar`;
+
     // モードごとのタイトルとメインスコアの出し分け
     let mainScoreHTML = "";
     let subStatsHTML = "";
 
     if (currentMode === 'time-trial') {
-        // 10問アタック：時間が主役
         mainScoreHTML = `<div style="font-size: 2.5rem; color: #ffd700; margin-bottom: 10px;">TIME: ${finalTime.toFixed(2)}s</div>`;
         subStatsHTML = `
-            <p>SPEED: ${kpm} KPM</p>
-            <p>MISSES: ${missCount}</p>
-            <p>ACCURACY: ${accuracy}%</p>
+            <p> SPEED: ${kpm} KPM</p>
+            <p> MISSES: ${missCount}</p>
+            <p> ACCURACY: ${accuracy}%</p>
         `;
     } else {
-        // 30秒アタック：クリア単語数が主役
         mainScoreHTML = `<div style="font-size: 2.5rem; color: #00ffcc; margin-bottom: 10px;">${wordIdx} WORDS</div>`;
         subStatsHTML = `
-            <p>SPEED: ${kpm} KPM</p>
-            <p>MISSES: ${missCount}</p>
-            <p>ACCURACY: ${accuracy}%</p>
-            <p>TOTAL TIME: 30.00s</p>
+            <p> SPEED: ${kpm} KPM</p>
+            <p> MISSES: ${missCount}</p>
+            <p> ACCURACY: ${accuracy}%</p>
+            <p> TOTAL TIME: 30.00s</p>
         `;
     }
 
@@ -223,9 +234,17 @@ function finishGame() {
         <div class="result-container" style="text-align: center;">
             <div style="font-size: 1.2rem; color: #aaa; letter-spacing: 2px;">MISSION COMPLETE</div>
             ${mainScoreHTML}
-            <div style="font-size: 1.2rem; text-align: left; display: inline-block; border-top: 1px solid #444; padding-top: 15px;">
+            <div style="font-size: 1.2rem; text-align: left; display: inline-block; border-top: 1px solid #444; padding: 15px 0;">
                 ${subStatsHTML}
             </div>
+
+            <div style="margin-top: 15px;">
+                <a href="${xLink}" target="_blank" rel="noopener noreferrer"
+                   style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #444;">
+                   𝕏 で結果をシェア
+                </a>
+            </div>
+
             <div style="margin-top: 25px; font-size: 1rem; color: #888; animation: blink 1s infinite;">
                 Press Enter to Retry
             </div>
