@@ -1,0 +1,97 @@
+:root {
+    --bg-color: #0d1117;
+    --panel-bg: rgba(22, 27, 34, 0.95);
+    --accent-blue: #58a6ff;
+    --correct-green: #39ff14;
+    --error-red: #ff4444;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: #c9d1d9;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+#game-container {
+    text-align: center;
+    border: 1px solid #30363d;
+    padding: 50px;
+    background: var(--panel-bg);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    border-radius: 12px;
+    min-width: 750px;
+}
+
+h1 { color: var(--accent-blue); letter-spacing: 8px; margin-bottom: 40px; font-size: 2.5rem; }
+
+/* ボタンデザイン */
+.btn-gradient {
+    display: inline-block;
+    padding: 12px 25px;
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    background-image: linear-gradient(to right, #70dafa 0%, #937df7 100%);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: 0.3s;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    margin: 8px;
+    min-width: 170px;
+    text-transform: uppercase;
+}
+
+.btn-gradient span { position: relative; z-index: 2; }
+
+.btn-gradient:hover:not(:disabled) {
+    transform: translate(0, -3px);
+    box-shadow: 0 8px 20px rgba(250, 112, 154, 0.4);
+    filter: brightness(1.1);
+    border-color: #fff;
+}
+
+.btn-gradient.active {
+    border: 2px solid var(--correct-green);
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+    transform: scale(1.05);
+}
+
+#start-btn.btn-gradient {
+    background-image: linear-gradient(to right, #00f3ff 10%, #39ff14 90%);
+    width: 80%;
+    font-size: 1.6rem;
+    margin-top: 40px;
+}
+
+#start-btn:disabled {
+    filter: grayscale(1);
+    opacity: 0.2;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.selection-group { margin-bottom: 30px; }
+.label { font-size: 0.8rem; color: #8b949e; margin-bottom: 12px; letter-spacing: 2px; }
+
+/* ゲーム表示 */
+#game-info { font-size: 1rem; color: var(--accent-blue); margin-bottom: 20px; }
+#word-display { font-size: 4rem; margin-bottom: 30px; min-height: 1.2em; }
+#word-display span { position: relative; padding: 0 2px; }
+#timer-display { font-size: 1.5rem; color: #8b949e; }
+
+/* タイピング状態 */
+.current { border-bottom: 4px solid var(--accent-blue); }
+.correct { color: var(--correct-green); text-shadow: 0 0 10px var(--correct-green); }
+.incorrect { color: var(--error-red); text-shadow: 0 0 15px var(--error-red); animation: shake 0.1s; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+}
