@@ -250,6 +250,8 @@ https://ssmbar.com/codtec/`;
     // --- フィードバック用URL ---
     const feedbackUrl = "https://docs.google.com/forms/d/e/https://docs.google.com/forms/d/e/1FAIpQLSfiswxbXdiDrfv-ioF_M2Tyt3Vjkeo6WETMfemG2dpUdL4AQA/viewform?usp=header/viewform";
 
+    const portalUrl = "https://ssmbar.com/"; // あなたのポータルサイトURL
+
     wordDisplay.innerHTML = `
         <div class="result-container" style="text-align: center;">
             <div style="font-size: 1.2rem; color: #aaa; letter-spacing: 2px;">MISSION COMPLETE</div>
@@ -264,12 +266,18 @@ https://ssmbar.com/codtec/`;
 
             <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                 <a href="${xLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #444;">
-                   X で結果をシェア
+                   X でシェア
                 </a>
+
                 <a href="${feedbackUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #222; color: #00ffcc; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #00ffcc;">
-                   フィードバックを送る
+                   報告を送信
+                </a>
+
+                <a href="${portalUrl}" style="display: inline-block; background: rgba(0, 69, 255, 0.2); color: #00d2ff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #00d2ff;">
+                   ポータルに戻る
                 </a>
             </div>
+
             <div style="margin-top: 25px; font-size: 1rem; color: #888; animation: blink 1s infinite;">Press Enter to Retry</div>
         </div>
     `;
