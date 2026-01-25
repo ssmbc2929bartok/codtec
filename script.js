@@ -163,27 +163,22 @@ window.addEventListener('keydown', (e) => {
 
     // 3. タイピング判定（ゲーム中のみ）
     if (!isPlaying) return;
-
-    // Shift, Ctrlなどの単体押しは無視
-    if (e.key.length !== 1) return;
+    if (e.key.length !== 1) return; // 修飾キーなどは無視
 
     const spans = wordDisplay.querySelectorAll('span');
     const targetChar = currentTargetWord[charIdx];
 
     if (e.key === targetChar) {
-        // 正解時
+        // 正解時：従来どおりの処理
         totalTyped++;
         spans[charIdx].classList.remove('miss');
         spans[charIdx].classList.remove('current');
         spans[charIdx].classList.add('cleared');
-
         charIdx++;
 
         if (charIdx < currentTargetWord.length) {
-            // 次の文字へハイライト移動
             spans[charIdx].classList.add('current');
         } else {
-            // 単語クリア時の処理
             wordIdx++;
             if (currentMode === 'time-trial' && wordIdx >= 10) {
                 finishGame();
@@ -192,8 +187,12 @@ window.addEventListener('keydown', (e) => {
             }
         }
     }
+    // 【追加】スペースがない場所でスペースを押した場合は「無視」する
+    else if (e.key === ' ' && targetChar !== ' ') {
+        return;
+    }
     else if (!['Shift', 'Control', 'Alt', 'CapsLock', 'Tab'].includes(e.key)) {
-        // 不正解時
+        // 不正解時：スペースが必要な場所で打たなかった場合などはここに来る
         spans[charIdx].classList.add('miss');
         missCount++;
     }
@@ -236,6 +235,8 @@ function finishGame() {
 
     const scoreResult = currentMode === 'time-trial' ? `${finalTime.toFixed(2)}s` : `${wordIdx} WORDS`;
 
+    const feedbackUrl = "https://docs.google.com/forms/d/e/https://forms.gle/2Ex9pZE9cnRG2DBB9/viewform";
+
     const shareText = `codtec (${displayName}) (${currentMode}) の結果
 
         SCORE: ${scoreResult}
@@ -258,11 +259,16 @@ function finishGame() {
                 <p>ACCURACY: ${accuracy}%</p>
             </div>
 
-            <div style="margin-top: 15px;">
+            <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                 <a href="${xLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #444;">
                    X で結果をシェア
                 </a>
+
+                <a href="${feedbackUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #222; color: #00ffcc; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #00ffcc;">
+                   フィードバックを送る
+                </a>
             </div>
+
             <div style="margin-top: 25px; font-size: 1rem; color: #888; animation: blink 1s infinite;">Press Enter to Retry</div>
         </div>
     `;
