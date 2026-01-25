@@ -229,23 +229,26 @@ function finishGame() {
             isNewRecord = true;
         }
     }
-
     const bestScoreDisplay = isNewRecord ? "NEW RECORD!" : `BEST: ${savedBest || '-'}`;
-    // ------------------------
 
+    // --- 【重要】表示名の設定と文面の構築 ---
+    const langNames = { 'cpp': 'C++', 'js': 'JavaScript', 'python': 'Python' };
+    const displayName = langNames[selectedLang] || selectedLang;
     const scoreResult = currentMode === 'time-trial' ? `${finalTime.toFixed(2)}s` : `${wordIdx} WORDS`;
 
-    const feedbackUrl = "https://docs.google.com/forms/d/e/https://forms.gle/2Ex9pZE9cnRG2DBB9/viewform";
+    // TERMINAL_LOG スタイル（行頭のスペースを入れない）
+    const shareText = `[CODTEC_REPORT]
+>> LANG: ${displayName} / MODE: ${currentMode}
+>> RESULT: ${scoreResult}
+>> KPM: ${kpm} / ACC: ${accuracy}%
+>> ERR_LOG: ${missCount} cases detected.
 
-    const shareText = `codtec (${displayName}) (${currentMode}) の結果
+https://ssmbar.com/codtec/`;
 
-        SCORE: ${scoreResult}
-        SPEED: ${kpm} KPM
-        ACCURACY: ${accuracy}%
-        MISSES: ${missCount}`;
+    const xLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&hashtags=codtec`;
 
-    const xLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent('https://ssmbar.com/codtec/')}&hashtags=codtec`;
-
+    // --- フィードバック用URL ---
+    const feedbackUrl = "https://docs.google.com/forms/d/e/https://docs.google.com/forms/d/e/1FAIpQLSfiswxbXdiDrfv-ioF_M2Tyt3Vjkeo6WETMfemG2dpUdL4AQA/viewform?usp=header/viewform";
 
     wordDisplay.innerHTML = `
         <div class="result-container" style="text-align: center;">
@@ -263,12 +266,10 @@ function finishGame() {
                 <a href="${xLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #444;">
                    X で結果をシェア
                 </a>
-
                 <a href="${feedbackUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #222; color: #00ffcc; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #00ffcc;">
                    フィードバックを送る
                 </a>
             </div>
-
             <div style="margin-top: 25px; font-size: 1rem; color: #888; animation: blink 1s infinite;">Press Enter to Retry</div>
         </div>
     `;
