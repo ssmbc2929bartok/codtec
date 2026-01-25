@@ -9,6 +9,7 @@ let timerInterval;
 let countdownInterval; // 追加：宣言を忘れずに
 let missCount = 0;
 let totalTyped = 0;
+let currentTargetWord = "";
 
 const menuScreen = document.getElementById('menu-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -86,12 +87,12 @@ function setNextWord() {
     const pool = WORD_DATA[selectedLang];
     let target;
 
-    // 前と同じ単語にならないように抽選（プールが2件以上ある場合）
     do {
         target = pool[Math.floor(Math.random() * pool.length)];
     } while (target === lastWord && pool.length > 1);
 
-    lastWord = target; // 今回の単語を保存
+    lastWord = target;
+    currentTargetWord = target;
     charIdx = 0;
 
     // 進捗表示の更新
@@ -132,42 +133,57 @@ function abortGame() {
 // --- キー入力（修正：二重リスナーを解消） ---
 
 window.addEventListener('keydown', (e) => {
-    // 1. 中断とカウントダウンのチェック
+    // 1. 強制終了 (Ctrl+C) の判定
+    // カウントダウン中、またはプレイ中のどちらでも中断できるようにします
     if (isPlaying || countdownInterval) {
-        // e.ctrlKey が true かつ、e.key が 'c'（大文字小文字問わず）の場合
-      if (e.ctrlKey && e.key.toLowerCase() === 'c') {
-          // ブラウザの「コピー」動作を防ぐ
-          e.preventDefault();
-
-          if (confirm('MISSION ABORTED. 中断しますか？')) {
-              abortGame();
-          }
-          return;
-      }
+        if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+            e.preventDefault(); // ブラウザのコピー動作を防止
+            if (confirm('MISSION ABORTED. 中断しますか？')) {
+                abortGame();
+            }
+            return;
+        }
     }
 
-    // ゲーム中でない時のメニュー操作
-    if (!isPlaying) {
-        if (e.key === '1') document.querySelector('[data-mode="time-trial"]').click();
-        if (e.key === '2') document.querySelector('[data-mode="score-attack"]').click();
-        if (e.key === 'Enter' && !startBtn.disabled) startGame();
+    // 2. ゲーム中ではない時のメニュー操作
+    if (!isPlaying && !countdownInterval) {
+        if (e.key === '1') {
+            const btn = document.querySelector('[data-mode="time-trial"]');
+            if (btn) btn.click();
+        }
+        if (e.key === '2') {
+            const btn = document.querySelector('[data-mode="score-attack"]');
+            if (btn) btn.click();
+        }
+        if (e.key === 'Enter' && !startBtn.disabled) {
+            startGame();
+        }
         return;
     }
 
-    // タイピング判定
+    // 3. タイピング判定（ゲーム中のみ）
+    if (!isPlaying) return;
+
+    // Shift, Ctrlなどの単体押しは無視
     if (e.key.length !== 1) return;
 
     const spans = wordDisplay.querySelectorAll('span');
-    const currentWordText = Array.from(spans).map(s => s.innerText).join('');
-    const targetChar = currentWordText[charIdx];
+    const targetChar = currentTargetWord[charIdx];
 
     if (e.key === targetChar) {
+        // 正解時
         totalTyped++;
-        spans[charIdx].className = 'correct';
+        spans[charIdx].classList.remove('miss');
+        spans[charIdx].classList.remove('current');
+        spans[charIdx].classList.add('cleared');
+
         charIdx++;
-        if (charIdx < currentWordText.length) {
-            spans[charIdx].className = 'current';
+
+        if (charIdx < currentTargetWord.length) {
+            // 次の文字へハイライト移動
+            spans[charIdx].classList.add('current');
         } else {
+            // 単語クリア時の処理
             wordIdx++;
             if (currentMode === 'time-trial' && wordIdx >= 10) {
                 finishGame();
@@ -175,10 +191,11 @@ window.addEventListener('keydown', (e) => {
                 setNextWord();
             }
         }
-    } else {
+    }
+    else if (!['Shift', 'Control', 'Alt', 'CapsLock', 'Tab'].includes(e.key)) {
+        // 不正解時
+        spans[charIdx].classList.add('miss');
         missCount++;
-        spans[charIdx].classList.add('incorrect');
-        setTimeout(() => spans[charIdx].classList.remove('incorrect'), 200);
     }
 });
 
@@ -189,69 +206,56 @@ function finishGame() {
     const endTime = performance.now();
     const finalTime = (endTime - startTime) / 1000;
 
-    // 共通の計算
     const kpm = finalTime > 0 ? ((totalTyped / finalTime) * 60).toFixed(1) : 0;
     const accuracy = totalTyped + missCount > 0
         ? ((totalTyped / (totalTyped + missCount)) * 100).toFixed(1)
         : 0;
 
-    // --- シェア用メッセージの作成 ---
-    const scoreResult = currentMode === 'time-trial'
-        ? `TIME: ${finalTime.toFixed(2)}s`
-        : `SCORE: ${wordIdx} WORDS`;
-
-    const shareText = encodeURIComponent(
-        `DevType [${currentMode}] をクリアしました！\n` +
-        `結果: ${scoreResult}\n` +
-        `速度: ${kpm} KPM / 正確率: ${accuracy}%\n`
-    );
-    const shareUrl = encodeURIComponent("https://ssmbar.com/codtec/");
-    const xLink = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}&hashtags=DevType,ssmbar`;
-
-    // モードごとのタイトルとメインスコアの出し分け
-    let mainScoreHTML = "";
-    let subStatsHTML = "";
+    // --- ハイスコアの処理 ---
+    const scoreKey = `best_${selectedLang}_${currentMode}`;
+    const savedBest = localStorage.getItem(scoreKey);
+    let isNewRecord = false;
 
     if (currentMode === 'time-trial') {
-        mainScoreHTML = `<div style="font-size: 2.5rem; color: #ffd700; margin-bottom: 10px;">TIME: ${finalTime.toFixed(2)}s</div>`;
-        subStatsHTML = `
-            <p> SPEED: ${kpm} KPM</p>
-            <p> MISSES: ${missCount}</p>
-            <p> ACCURACY: ${accuracy}%</p>
-        `;
+        if (!savedBest || finalTime < parseFloat(savedBest)) {
+            localStorage.setItem(scoreKey, finalTime);
+            isNewRecord = true;
+        }
     } else {
-        mainScoreHTML = `<div style="font-size: 2.5rem; color: #00ffcc; margin-bottom: 10px;">${wordIdx} WORDS</div>`;
-        subStatsHTML = `
-            <p> SPEED: ${kpm} KPM</p>
-            <p> MISSES: ${missCount}</p>
-            <p> ACCURACY: ${accuracy}%</p>
-            <p> TOTAL TIME: 30.00s</p>
-        `;
+        if (!savedBest || wordIdx > parseInt(savedBest)) {
+            localStorage.setItem(scoreKey, wordIdx);
+            isNewRecord = true;
+        }
     }
 
-    // リザルト画面の描画
+    const bestScoreDisplay = isNewRecord ? "NEW RECORD!" : `BEST: ${savedBest || '-'}`;
+    // ------------------------
+
+    const scoreResult = currentMode === 'time-trial' ? `${finalTime.toFixed(2)}s` : `${wordIdx} WORDS`;
+    const shareText = encodeURIComponent(`codtec [${currentMode}] 結果: ${scoreResult}\n速度: ${kpm} KPM / 正確率: ${accuracy}%\n`);
+    const xLink = `https://twitter.com/intent/tweet?text=${shareText}&url=https://ssmbar.com/codtec/&hashtags=codtec`;
+
     wordDisplay.innerHTML = `
         <div class="result-container" style="text-align: center;">
             <div style="font-size: 1.2rem; color: #aaa; letter-spacing: 2px;">MISSION COMPLETE</div>
-            ${mainScoreHTML}
+            <div style="font-size: 2.5rem; color: ${currentMode === 'time-trial' ? '#ffd700' : '#00ffcc'}; margin-bottom: 5px;">${scoreResult}</div>
+            <div style="font-size: 1rem; color: #ff00ff; margin-bottom: 10px; font-weight: bold;">${bestScoreDisplay}</div>
+
             <div style="font-size: 1.2rem; text-align: left; display: inline-block; border-top: 1px solid #444; padding: 15px 0;">
-                ${subStatsHTML}
+                <p>SPEED: ${kpm} KPM</p>
+                <p>MISSES: ${missCount}</p>
+                <p>ACCURACY: ${accuracy}%</p>
             </div>
 
             <div style="margin-top: 15px;">
-                <a href="${xLink}" target="_blank" rel="noopener noreferrer"
-                   style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #444;">
-                   𝕏 で結果をシェア
+                <a href="${xLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: 1px solid #444;">
+                   X で結果をシェア
                 </a>
             </div>
-
-            <div style="margin-top: 25px; font-size: 1rem; color: #888; animation: blink 1s infinite;">
-                Press Enter to Retry
-            </div>
+            <div style="margin-top: 25px; font-size: 1rem; color: #888; animation: blink 1s infinite;">Press Enter to Retry</div>
         </div>
     `;
 
-    // Enterキーでリロード（再挑戦）
     const restartHandler = (e) => {
         if (e.key === 'Enter') {
             window.removeEventListener('keydown', restartHandler);

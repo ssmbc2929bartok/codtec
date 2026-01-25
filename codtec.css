@@ -76,6 +76,31 @@ h1 { color: var(--accent-blue); letter-spacing: 8px; margin-bottom: 40px; font-s
     transform: none;
 }
 
+/* 文字の基本状態（未入力） */
+#word-display span {
+    display: inline-block;
+    min-width: 0.6em;
+    color: #888; /* 未入力はグレー */
+    border-bottom: 2px solid transparent;
+}
+
+/* 現在入力すべき文字 */
+#word-display span.current {
+    color: #fff;
+    border-bottom: 2px solid #00ffcc;
+}
+
+/* 正解した文字（緑色） */
+#word-display span.cleared {
+    color: #00ff00;
+}
+
+/* 間違えた文字（赤い背景） */
+#word-display span.miss {
+    background-color: #ff0000;
+    color: #ffffff;
+}
+
 .selection-group { margin-bottom: 30px; }
 .label { font-size: 0.8rem; color: #8b949e; margin-bottom: 12px; letter-spacing: 2px; }
 
