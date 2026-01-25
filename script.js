@@ -199,6 +199,9 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+//言語追加時はlangNamesも追加すること
+const langNames = { 'cpp': 'C++', 'js': 'JavaScript', 'python': 'Python' };
+const displayName = langNames[selectedLang] || selectedLang;
 function finishGame() {
     isPlaying = false;
     clearInterval(timerInterval);
@@ -232,8 +235,16 @@ function finishGame() {
     // ------------------------
 
     const scoreResult = currentMode === 'time-trial' ? `${finalTime.toFixed(2)}s` : `${wordIdx} WORDS`;
-    const shareText = encodeURIComponent(`codtec [${currentMode}] 結果: ${scoreResult}\n速度: ${kpm} KPM / 正確率: ${accuracy}%\n`);
-    const xLink = `https://twitter.com/intent/tweet?text=${shareText}&url=https://ssmbar.com/codtec/&hashtags=codtec`;
+
+    const shareText = `codtec (${displayName}) (${currentMode}) の結果
+
+        SCORE: ${scoreResult}
+        SPEED: ${kpm} KPM
+        ACCURACY: ${accuracy}%
+        MISSES: ${missCount}`;
+
+    const xLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent('https://ssmbar.com/codtec/')}&hashtags=codtec`;
+
 
     wordDisplay.innerHTML = `
         <div class="result-container" style="text-align: center;">
