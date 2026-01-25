@@ -1,4 +1,4 @@
-⌨️ DevType: Terminal-Style Typing Game
+Terminal-Style Typing Game
 プログラマーやエンジニアのために設計された、ターミナル風のWebタイピングゲームです。C++などの予約語やコマンドを、エンジニアお馴染みのショートカットで操作しながら練習できます。
 
 🚀 Live Demo
