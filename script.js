@@ -248,7 +248,7 @@ https://ssmbar.com/codtec/`;
     const xLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&hashtags=codtec`;
 
     // --- フィードバック用URL ---
-    const feedbackUrl = "https://docs.google.com/forms/d/e/https://forms.gle/LyDvQHQAxhhWmnH66/viewform";
+    const feedbackUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfiswxbXdiDrfv-ioF_M2Tyt3Vjkeo6WETMfemG2dpUdL4AQA/viewform";
 
     const portalUrl = "https://ssmbar.com/"; // あなたのポータルサイトURL
 
