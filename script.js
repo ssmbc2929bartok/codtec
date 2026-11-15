@@ -136,7 +136,12 @@
     }
 
     function formatScore(mode, value) {
-        return mode.score === 'time' ? `${value.toFixed(2)}s` : `${value} WORDS`;
+        return mode.score === 'time' ? `${value.toFixed(2)}s` : wordsText(value);
+    }
+
+    // 「1 WORD」「2 WORDS」のように、数に合わせて書く
+    function wordsText(count) {
+        return `${count} ${count === 1 ? 'WORD' : 'WORDS'}`;
     }
 
     function getMode(id) {
@@ -641,6 +646,7 @@
         const ending = ENDINGS[kind];
         game.elapsedMs += performance.now() - game.segmentStart; // 表示している間は時間を進めない
         game.dead = kind === 'dead';
+        game.endKind = kind;
         phase = 'ending';
         clearInterval(timerInterval);
         timerInterval = null;
@@ -756,7 +762,7 @@
         const tracked = g.mode.score !== 'none';
         const scoreText = tracked
             ? formatScore(g.mode, score)
-            : `${g.wordIdx} WORDS / ${finalTime.toFixed(2)}s`;
+            : `${wordsText(g.wordIdx)} / ${finalTime.toFixed(2)}s`;
 
         // ハイスコア（CUSTOM はルールが毎回違うので保存しない）
         let isNewRecord = false;
@@ -769,7 +775,7 @@
                 ? (prevBest === null ? 'NEW RECORD!' : `NEW RECORD!  (前回のベスト: ${formatScore(g.mode, prevBest)})`)
                 : `BEST: ${formatScore(g.mode, prevBest)}`;
         }
-        const modeText = tracked ? g.mode.id : `custom (${ruleSummary(g.rules)})`;
+        const modeText = tracked ? g.mode.label : `CUSTOM (${ruleSummary(g.rules)})`;
 
         // PICK LANGS のときは、選んだ言語の名前も並べる
         const baseName = g.langData.id === PICK_ID
@@ -777,11 +783,25 @@
             : g.langData.name;
         const langText = g.sel.course === 'all' ? baseName : `${baseName} (${courseLabel(g.sel.course)})`;
 
+        // X にシェアする文面。画面と同じ呼び名（モード名・コース名・終わり方）で書く
+        // PICK LANGS は言語名が長くなるので、3 つまで並べて残りは数で表す
+        const members = g.langData.members || [];
+        const shareBase = g.langData.id === PICK_ID
+            ? `${members.slice(0, 3).map(langName).join(' + ')}${members.length > 3 ? ` +${members.length - 3}` : ''}`
+            : g.langData.name;
+        const shareLang = g.sel.course === 'all' ? shareBase : `${shareBase} (${courseLabel(g.sel.course)})`;
+        const errLog = g.missCount === 0
+            ? 'no errors detected.'
+            : `${g.missCount} ${g.missCount === 1 ? 'case' : 'cases'} detected.`;
+        const exitText = g.endKind ? ENDINGS[g.endKind].title.replace('!', '') : 'FINISH';
+
         const shareText = `[CODTEC_REPORT]
->> LANG: ${langText} / MODE: ${modeText}
->> RESULT: ${scoreText}
+>> LANG: ${shareLang}
+>> MODE: ${modeText}
+>> RESULT: ${scoreText}${isNewRecord ? ' [NEW RECORD]' : ''}
 >> KPM: ${kpm} / ACC: ${accuracy}%
->> ERR_LOG: ${g.missCount} cases detected.
+>> ERR_LOG: ${errLog}
+>> EXIT: ${exitText}
 
 ${SITE_URL}`;
         const xLink = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&hashtags=codtec`;

@@ -4,7 +4,7 @@ Terminal-Style Typing Game
 
 プログラマーやエンジニアのために設計された、ターミナル風の Web タイピングゲームです。実際のコードやコマンドを打って練習できます。
 
-現在のバージョンは v2.3.2 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
+現在のバージョンは v2.3.3 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
 
 ## 🚀 Live Demo
 
@@ -108,7 +108,7 @@ main ブランチにプッシュすると、GitHub Pages が https://ssmbc2929ba
 公開する変更をコミットする前に、新しいバージョン番号で次を実行します。画面のバージョン表記と、CSS や JS を読み込む URL の印（`?v=`）がまとめて書き換わります。
 
 ```bash
-node tools/release.mjs 2.3.3
+node tools/release.mjs 2.3.4
 ```
 
 この印が前と同じままだと、ブラウザが古い CSS や JS を使い続けて、更新が反映されないことがあります。
