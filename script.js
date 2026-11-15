@@ -28,10 +28,10 @@
     // color はメニューの枠線と結果のスコアに使う色。
     // MARATHON のミスのペナルティ。start 問クリアしたら base 秒になり、
     // そのあとは every 問クリアするごとに増える（増える量は、何問目までかで steps から選ぶ）。
-    //   20 問: 0.1 秒 → 30・40・50 問: +0.1 秒ずつ → 60〜100 問: +0.2 秒ずつ → 110 問以降: +0.3 秒ずつ
+    //   10 問: 0.1 秒 → 20〜50 問: +0.1 秒ずつ → 60〜100 問: +0.2 秒ずつ → 110 問以降: +0.3 秒ずつ
     // max 秒より重くはならない（220 問で 5 秒に届く）。
     const MARATHON_PENALTY = {
-        start: 20,
+        start: 10,
         base: 0.1,
         every: 10,
         max: 5,
@@ -47,7 +47,7 @@
         { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
         { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
         { id: 'score-attack-120', label: '120s SCORE ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
-        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。20 問目から、ミスすると時間が減り、10 問ごとに重くなる', rules: { seconds: 30, bonus: 10, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
+        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる', rules: { seconds: 30, bonus: 10, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
         { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
         { id: 'custom', label: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
