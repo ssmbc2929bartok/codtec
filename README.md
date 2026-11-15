@@ -104,8 +104,6 @@ python3 -m http.server 8765
 
 main ブランチにプッシュすると、GitHub Pages が https://ssmbc2929bartok.github.io/codtec/ に公開します。
 
-以前の公開先 https://ssmbar.com/codtec/ は、`codtec/index.html` の転送ページから新しい公開先へ移動します。`codtec/` フォルダにはこの 1 ページだけを置いています。
-
 ## 📂 今後のアップデート予定
 
 - [x] 対応言語の追加

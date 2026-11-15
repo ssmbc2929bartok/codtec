@@ -42,7 +42,7 @@ Codtec の変更をバージョンごとに記録しています。新しいバ�
 - 出題を山札方式にしました。全問が一巡するまで同じ問題は出ません。
 - 長い問題は文字を自動で小さくして表示します。
 - カウントダウンの間隔を 1 秒から 0.8 秒に縮めました。
-- 公開先を https://ssmbar.com/codtec/ から https://ssmbc2929bartok.github.io/codtec/ に変えました。以前の URL を開くと、新しい公開先へ自動で移動します。
+- 公開先を https://ssmbar.com/codtec/ から https://ssmbc2929bartok.github.io/codtec/ に変えました。以前の URL では開けなくなります。
 - 読み込む CSS と JavaScript の URL にバージョン番号を付け、更新後に古いキャッシュが使われないようにしました。
 - 記録をコースごとに保存するようにしました。ALL コースの記録は v1 の記録をそのまま引き継ぎます。
 - ライセンスを CC0 から MIT ライセンスに変えました。全文は [LICENSE](LICENSE) にあります。
