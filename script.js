@@ -21,16 +21,18 @@
     //   seconds : 持ち時間（秒）。なくなったら終了
     //   bonus   : 1 問クリアするごとに持ち時間へ足す秒数
     //   penalty : 1 回ミスするごとに持ち時間から引く秒数（0.1 秒きざみ）
-    //   penaltyAfter : この問題数をクリアしてからのミスだけ penalty を引く（省略は最初から）
+    //   penaltyEvery : この問題数をクリアするごとに、1 回のミスで引く秒数が penalty ずつ増える
+    //                  （50 なら 49 問目までは 0、50 問目から penalty、100 問目から penalty の 2 倍。省略は最初から penalty）
     //   lives   : ミスがこの回数に達したら終了
     // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
+    // milestone を付けたモードでは、その問題数をクリアするごとに短い知らせを出す。
     // color はメニューの枠線と結果のスコアに使う色。
     const MODES = [
         { id: 'time-trial', label: `${TRIAL_WORDS} WORDS TRIAL`, desc: `${TRIAL_WORDS} 問を打ち切るまでの速さを競う`, rules: { words: TRIAL_WORDS }, score: 'time', color: '#ffd700' },
         { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
         { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
         { id: 'score-attack-120', label: '120s SCORE ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
-        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。50 問クリア以降は、1 回ミスするごとに 0.1 秒減る', rules: { seconds: 30, bonus: 10, penalty: 0.1, penaltyAfter: 50 }, score: 'words', color: '#ffa94d' },
+        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。50 問クリアするごとに、1 回のミスで減る時間が 0.1 秒ずつ増える', rules: { seconds: 30, bonus: 10, penalty: 0.1, penaltyEvery: 50 }, milestone: 10, score: 'words', color: '#ffa94d' },
         { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
         { id: 'custom', label: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
@@ -54,7 +56,7 @@
             rules[key] = clampRule(key, raw && raw[key]);
         });
         if (!rules.seconds) { rules.bonus = 0; rules.penalty = 0; } // 持ち時間がなければ増減もない
-        rules.penaltyAfter = Math.max(0, Math.floor(Number(raw && raw.penaltyAfter) || 0));
+        rules.penaltyEvery = Math.max(0, Math.floor(Number(raw && raw.penaltyEvery) || 0));
         // 終わる条件が 1 つもないと終われないので、10 問で終わるようにする
         if (!rules.words && !rules.seconds && !rules.lives) rules.words = TRIAL_WORDS;
         return rules;
@@ -84,6 +86,7 @@
     const menuMessage = $('menu-message');
     const courseTag = $('course-tag');
     const customPanel = $('custom-panel');
+    const toast = $('toast');
 
     // phase: 'loading' | 'menu' | 'countdown' | 'playing' | 'paused' | 'ending' | 'result'
     let phase = 'loading';
@@ -350,7 +353,7 @@
             mode: getMode(selection.mode),
             rules: normalizeRules(selection.mode === 'custom' ? selection.custom : getMode(selection.mode).rules),
             dead: false,     // ミスの上限で終わったか
-            penaltyCount: 0, // 持ち時間を減らす対象になったミスの回数
+            penaltyTotal: 0, // ミスで減った持ち時間の合計（秒）
             pool,
             bag: [],
             target: null,
@@ -366,6 +369,7 @@
         };
         pauseOverlay.hidden = true;
         gameScreen.classList.remove('paused');
+        hideToast();
         noteDisplay.textContent = '';
         noteDisplay.className = '';
         infoDisplay.textContent = `${game.langData.name} / ${courseLabel(game.sel.course)}`;
@@ -416,7 +420,7 @@
 
     // 問題文の文字サイズを、1 行に収まる範囲でできるだけ大きくする
     const WORD_SIZE_MIN = 20;
-    const WORD_SIZE_MAX = 64;
+    const WORD_SIZE_MAX = 54;
     const CHAR_WIDTH_RATIO = 0.62; // 等幅フォントの 1 文字の幅 ÷ 文字サイズ（少し余裕を見た値）
 
     function fitWordSize() {
@@ -463,10 +467,41 @@
     }
 
     // いまの持ち時間（秒）。1 問クリアするごとに bonus 秒ずつ増え、
-    // 1 回ミスするごとに penalty 秒ずつ減る
+    // ミスするたびに missPenalty() 秒ずつ減る
     function timeAllowed() {
-        const { seconds, bonus, penalty } = game.rules;
-        return seconds + bonus * game.wordIdx - penalty * game.penaltyCount;
+        const { seconds, bonus } = game.rules;
+        return seconds + bonus * game.wordIdx - game.penaltyTotal;
+    }
+
+    // いま 1 回ミスしたときに減る秒数。penaltyEvery があれば、クリアした問題数に応じて増える
+    function missPenalty(words = game.wordIdx) {
+        const { penalty, penaltyEvery } = game.rules;
+        const level = penaltyEvery ? Math.floor(words / penaltyEvery) : 1;
+        return Math.round(penalty * level * 10) / 10;
+    }
+
+    // 決まった問題数をクリアするごとに、プレイの邪魔にならない短い知らせを出す
+    function showMilestone() {
+        const every = game.mode.milestone;
+        if (!every || game.wordIdx === 0 || game.wordIdx % every !== 0) return;
+        const { penalty, penaltyEvery } = game.rules;
+        const penaltyUp = penalty && penaltyEvery && game.wordIdx % penaltyEvery === 0;
+        showToast(
+            penaltyUp ? `${game.wordIdx} WORDS  |  MISS PENALTY -${missPenalty().toFixed(1)}s` : `${game.wordIdx} WORDS CLEARED`,
+            penaltyUp ? 'warn' : ''
+        );
+    }
+
+    function showToast(text, kind) {
+        toast.textContent = text;
+        toast.className = 'toast';
+        void toast.offsetWidth; // アニメーションをやり直すための再描画
+        toast.className = `toast show ${kind}`;
+    }
+
+    function hideToast() {
+        toast.className = 'toast';
+        toast.textContent = '';
     }
 
     function updateTimer() {
@@ -536,6 +571,7 @@
             game.history.push({ item: game.target, misses: game.wordMiss, done: true });
             game.wordIdx++;
             if (game.rules.bonus) flashBonus();
+            showMilestone();
             if (game.rules.words && game.wordIdx >= game.rules.words) showEnding('finish');
             else setNextWord();
             return;
@@ -551,8 +587,9 @@
         span.className = 'current miss';
         if (game.rules.lives && game.missCount >= game.rules.lives) showEnding('dead');
         else {
-            if (game.rules.penalty && game.wordIdx >= game.rules.penaltyAfter) {
-                game.penaltyCount++;
+            const lost = missPenalty();
+            if (lost > 0) {
+                game.penaltyTotal += lost;
                 flashTimer('penalty');
             }
             updateProgress();

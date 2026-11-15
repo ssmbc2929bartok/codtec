@@ -6,7 +6,7 @@
     <meta name="description" content="Codtec の遊び方。コース・モード・操作キー・記録の説明です。">
     <title>How to Play | Codtec</title>
     <!-- ?v= は node tools/release.mjs <番号> で index.html と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.1.0">
+    <link rel="stylesheet" href="codtec.css?v=2.2.0">
 </head>
 <body class="doc-page">
 
@@ -59,7 +59,7 @@
                     <tr><td>30s SCORE ATTACK</td><td>30 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>60s SCORE ATTACK</td><td>60 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>120s SCORE ATTACK</td><td>120 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
-                    <tr><td>MARATHON</td><td>持ち時間 30 秒で始まり、1 問クリアするごとに 10 秒増えます。50 問クリアしたあとは、1 回ミスするごとに 0.1 秒減ります。時間がなくなるまでに何問続けられるかを競います。問題切れを防ぐため、選んだ言語にかかわらず全言語から出題します。</td><td>打ち切った問題数</td></tr>
+                    <tr><td>MARATHON</td><td>持ち時間 30 秒で始まり、1 問クリアするごとに 10 秒増えます。50 問クリアするごとに、1 回のミスで減る時間が 0.1 秒ずつ増えます（49 問目までは減らず、50 問目から 0.1 秒、100 問目から 0.2 秒）。10 問クリアするごとに短い知らせが出て、50 問ごとの知らせには、そのときのミスで減る時間も出ます。時間がなくなるまでに何問続けられるかを競います。問題切れを防ぐため、選んだ言語にかかわらず全言語から出題します。</td><td>打ち切った問題数</td></tr>
                     <tr><td>SUDDEN DEATH</td><td>1 回でもミスしたら終了です。何問続けられるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>CUSTOM</td><td>ルールを自分で決めて遊びます。</td><td>保存されません</td></tr>
                 </table>
@@ -126,6 +126,6 @@
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
-    <script src="theme.js?v=2.1.0"></script>
+    <script src="theme.js?v=2.2.0"></script>
 </body>
 </html>
