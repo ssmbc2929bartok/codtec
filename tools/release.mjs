@@ -31,6 +31,6 @@ function rewrite(file, pattern, replacement, expected) {
 }
 
 rewrite('data/registry.js', /const VERSION = '[^']*';/g, `const VERSION = '${version}';`, 1);
-rewrite('index.html', /\?v=[0-9.]+/g, `?v=${version}`, 4);
-rewrite('howto.html', /\?v=[0-9.]+/g, `?v=${version}`, 1);
+rewrite('index.html', /\?v=[0-9.]+/g, `?v=${version}`, 5);
+rewrite('howto.html', /\?v=[0-9.]+/g, `?v=${version}`, 2);
 console.log('変更履歴（CHANGELOG.md）に、このバージョンの項目を書き足してください。');

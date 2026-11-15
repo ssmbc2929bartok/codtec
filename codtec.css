@@ -216,7 +216,9 @@ kbd {
 .btn-ghost:hover { color: #fff; border-color: var(--accent-blue); background: rgba(88, 166, 255, 0.1); }
 
 /* --- ゲーム画面 --- */
-#game-screen { position: relative; min-height: 320px; }
+#game-screen { position: relative; padding-bottom: 8px; }
+/* 一時停止の間だけ、メニューが収まる高さを確保する */
+#game-screen.paused { min-height: 300px; }
 .game-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 
 .course-tag {
@@ -243,10 +245,7 @@ kbd {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
-#word-display[data-size="m"] { font-size: 3rem; }
-#word-display[data-size="s"] { font-size: 2.3rem; }
-#word-display[data-size="xs"] { font-size: 1.8rem; }
-#word-display[data-size="xxs"] { font-size: 1.45rem; }
+/* プレイ中の文字サイズは、問題文の長さと幅に合わせて script.js が決める */
 #word-display.countdown { font-size: 4rem; color: #fff; }
 
 #word-display span { color: #888; border-bottom: 3px solid transparent; }
@@ -259,19 +258,25 @@ kbd {
     animation: shake 0.12s;
 }
 
-#note-display { min-height: 1.5em; margin-bottom: 22px; font-size: 0.9rem; color: var(--muted); }
+#note-display { min-height: 1.5em; margin-bottom: 22px; font-size: 1rem; color: var(--muted); }
 #note-display.warn { color: var(--error-red); }
-#timer-display { font-size: 1.5rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+#timer-display { font-size: 1.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 #timer-display.bonus { color: var(--correct-green); }
 #timer-display.penalty { color: var(--error-red); }
-#timer-display.game-over {
+/* 終了時の表示（FINISH! / TIME UP! / TERMINATED） */
+#timer-display.ending {
     font-size: 2.6rem;
     font-weight: bold;
     letter-spacing: 8px;
+}
+#timer-display.ending.finish { color: var(--correct-green); text-shadow: 0 0 18px rgba(57, 255, 20, 0.6); }
+#timer-display.ending.timeup { color: var(--gold); text-shadow: 0 0 18px rgba(255, 215, 0, 0.6); }
+#timer-display.ending.dead {
     color: var(--error-red);
     text-shadow: 0 0 18px rgba(255, 68, 68, 0.7);
     animation: shake 0.12s 3;
 }
+#note-display.ending-note { color: var(--text); }
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -289,7 +294,7 @@ kbd {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: rgba(13, 17, 23, 0.97);
+    background: #0d1117; /* 問題文が透けて読めないよう、完全に隠す */
     border: 1px dashed var(--border);
     border-radius: 8px;
 }
@@ -397,9 +402,55 @@ kbd {
 .howto-back { margin-top: 32px; text-align: center; }
 .howto-back .btn-gradient { text-decoration: none; }
 
+/* --- 背景（theme.js が body の data-bg を切り替える） --- */
+body { background-attachment: fixed; }
+
+/* GRID: サイバー調の方眼 */
+body[data-bg="grid"] {
+    background-image:
+        radial-gradient(ellipse at 50% -10%, rgba(88, 166, 255, 0.22), transparent 60%),
+        radial-gradient(ellipse at 50% 110%, rgba(147, 125, 247, 0.18), transparent 55%),
+        linear-gradient(rgba(88, 166, 255, 0.11) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(88, 166, 255, 0.11) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+}
+
+/* CIRCUIT: 基板調の配線とランド */
+body[data-bg="circuit"] {
+    background-color: #06120e;
+    background-image:
+        radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(3, 8, 6, 0.85) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2324a36b' stroke-opacity='.5' stroke-width='1.5'%3E%3Cpath d='M0 50h60l20 20h50l20-20h50'/%3E%3Cpath d='M50 0v30l20 20v60l-20 20v70'/%3E%3Cpath d='M0 150h40l20 20h60l20-20h60'/%3E%3Cpath d='M150 0v50M150 80v40l-20 20v60'/%3E%3Cpath d='M100 0v20l20 20M100 200v-20l-20-20v-40'/%3E%3Cpath d='M0 100h20M180 100h20'/%3E%3C/g%3E%3Cg fill='%2339ff14' fill-opacity='.55'%3E%3Ccircle cx='60' cy='50' r='3.5'/%3E%3Ccircle cx='150' cy='50' r='3.5'/%3E%3Ccircle cx='150' cy='80' r='3.5'/%3E%3Ccircle cx='50' cy='130' r='3.5'/%3E%3Ccircle cx='120' cy='40' r='3.5'/%3E%3Ccircle cx='80' cy='120' r='3.5'/%3E%3Ccircle cx='20' cy='100' r='3.5'/%3E%3Ccircle cx='180' cy='100' r='3.5'/%3E%3Ccircle cx='40' cy='150' r='3.5'/%3E%3C/g%3E%3Cg fill='none' stroke='%2324a36b' stroke-opacity='.45'%3E%3Crect x='92' y='84' width='36' height='24' rx='2'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 100% 100%, 200px 200px;
+}
+
+/* CRT: ブラウン管の走査線 */
+body[data-bg="crt"] {
+    background-color: #050a08;
+    background-image:
+        radial-gradient(ellipse at 50% 50%, rgba(0, 255, 204, 0.10), transparent 70%),
+        repeating-linear-gradient(0deg, rgba(0, 255, 204, 0.07) 0, rgba(0, 255, 204, 0.07) 1px, transparent 1px, transparent 4px);
+    background-size: 100% 100%, 100% 4px;
+}
+
+.bg-btn {
+    margin-right: auto;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: #6e7681;
+    font-family: inherit;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+.bg-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+
 /* --- フッター --- */
 #app-footer {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
     gap: 14px;
     margin-top: 14px;
@@ -416,7 +467,6 @@ kbd {
     .howto table { font-size: 0.8rem; }
     .lang-group { flex-direction: column; gap: 4px; }
     .group-label { flex: none; text-align: left; }
-    #word-display { font-size: 2rem !important; }
     .key-hint { display: none; }
     .custom-panel { grid-template-columns: 1fr; }
     .review-note { margin-left: 0; }

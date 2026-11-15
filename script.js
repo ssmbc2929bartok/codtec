@@ -5,7 +5,12 @@
 
     const TRIAL_WORDS = 10;
     const COUNTDOWN_STEP_MS = 800;
-    const GAME_OVER_MS = 1400; // ミスの上限で終わったあと、TERMINATED を見せておく時間
+    // ゲームが終わったとき、結果画面へ進む前に見せる表示（kind ごとの文面と、見せておく時間）
+    const ENDINGS = {
+        finish: { title: 'FINISH!', note: 'all tasks completed. exit code 0.', ms: 1100 },
+        timeup: { title: 'TIME UP!', note: 'timeout: time limit exceeded.', ms: 1100 },
+        dead: { title: 'TERMINATED', note: 'fatal: mistyped key. process terminated.', ms: 1400 },
+    };
 
     const SITE_URL = 'https://ssmbc2929bartok.github.io/codtec/';
     const PORTAL_URL = 'https://ssmbar.com/';
@@ -307,6 +312,7 @@
         game = null;
         phase = 'menu';
         pauseOverlay.hidden = true;
+        gameScreen.classList.remove('paused');
         renderMenu();
         menuMessage.textContent = message || '';
         show('menu');
@@ -359,6 +365,7 @@
             segmentStart: 0, // 再開した時刻
         };
         pauseOverlay.hidden = true;
+        gameScreen.classList.remove('paused');
         noteDisplay.textContent = '';
         noteDisplay.className = '';
         infoDisplay.textContent = `${game.langData.name} / ${courseLabel(game.sel.course)}`;
@@ -369,7 +376,7 @@
     function runCountdown(count) {
         phase = 'countdown';
         wordDisplay.className = 'countdown';
-        wordDisplay.removeAttribute('data-size');
+        wordDisplay.style.fontSize = '';
         wordDisplay.removeAttribute('data-course');
         courseTag.textContent = '';
         wordDisplay.textContent = count > 0 ? String(count) : 'GO!';
@@ -407,12 +414,16 @@
         return game.bag.pop();
     }
 
-    function sizeFor(length) {
-        if (length <= 12) return 'l';
-        if (length <= 20) return 'm';
-        if (length <= 30) return 's';
-        if (length <= 42) return 'xs';
-        return 'xxs';
+    // 問題文の文字サイズを、1 行に収まる範囲でできるだけ大きくする
+    const WORD_SIZE_MIN = 20;
+    const WORD_SIZE_MAX = 64;
+    const CHAR_WIDTH_RATIO = 0.62; // 等幅フォントの 1 文字の幅 ÷ 文字サイズ（少し余裕を見た値）
+
+    function fitWordSize() {
+        if (!game || !game.target) return;
+        const width = wordDisplay.clientWidth || 800;
+        const size = Math.floor(width / (game.target.text.length * CHAR_WIDTH_RATIO));
+        wordDisplay.style.fontSize = `${Math.min(WORD_SIZE_MAX, Math.max(WORD_SIZE_MIN, size))}px`;
     }
 
     function setNextWord() {
@@ -429,7 +440,7 @@
             : courseLabel(game.target.course);
 
         wordDisplay.textContent = '';
-        wordDisplay.dataset.size = sizeFor(game.target.text.length);
+        fitWordSize();
         game.spans = Array.from(game.target.text, (ch, i) => {
             const span = document.createElement('span');
             span.textContent = ch;
@@ -463,7 +474,7 @@
         if (game.rules.seconds) {
             const remaining = Math.max(0, timeAllowed() - elapsed);
             timerDisplay.textContent = `REMAINING: ${remaining.toFixed(2)}s`;
-            if (remaining <= 0 && phase === 'playing') finishGame();
+            if (remaining <= 0 && phase === 'playing') showEnding('timeup');
         } else {
             timerDisplay.textContent = `TIME: ${elapsed.toFixed(2)}s`;
         }
@@ -479,11 +490,13 @@
         timerInterval = null;
         updateTimer();
         pauseOverlay.hidden = false; // 問題文はオーバーレイで隠れる
+        gameScreen.classList.add('paused');
     }
 
     function resumeGame() {
         if (phase !== 'paused') return;
         pauseOverlay.hidden = true;
+        gameScreen.classList.remove('paused');
         phase = 'playing';
         game.segmentStart = performance.now();
         timerInterval = setInterval(updateTimer, 30);
@@ -523,7 +536,7 @@
             game.history.push({ item: game.target, misses: game.wordMiss, done: true });
             game.wordIdx++;
             if (game.rules.bonus) flashBonus();
-            if (game.rules.words && game.wordIdx >= game.rules.words) finishGame();
+            if (game.rules.words && game.wordIdx >= game.rules.words) showEnding('finish');
             else setNextWord();
             return;
         }
@@ -536,7 +549,7 @@
         span.className = 'current';
         void span.offsetWidth; // アニメーションをやり直すための再描画
         span.className = 'current miss';
-        if (game.rules.lives && game.missCount >= game.rules.lives) showGameOver();
+        if (game.rules.lives && game.missCount >= game.rules.lives) showEnding('dead');
         else {
             if (game.rules.penalty && game.wordIdx >= game.rules.penaltyAfter) {
                 game.penaltyCount++;
@@ -559,20 +572,27 @@
         }, 400);
     }
 
-    // ミスの上限に達したとき: ミスした文字を見せたまま TERMINATED を出し、少し置いてから結果へ進む
-    function showGameOver() {
-        game.elapsedMs += performance.now() - game.segmentStart;
-        game.dead = true;
-        updateProgress();
+    // ゲームが終わったとき: 最後の問題文を見せたまま終了の表示を出し、少し置いてから結果へ進む
+    //   finish … 決めた問題数を打ち切った / timeup … 持ち時間がなくなった / dead … ミスの上限に達した
+    function showEnding(kind) {
+        const ending = ENDINGS[kind];
+        game.elapsedMs += performance.now() - game.segmentStart; // 表示している間は時間を進めない
+        game.dead = kind === 'dead';
         phase = 'ending';
         clearInterval(timerInterval);
         timerInterval = null;
-        timerDisplay.className = 'game-over';
-        timerDisplay.textContent = 'TERMINATED';
-        noteDisplay.className = 'warn';
-        noteDisplay.textContent = 'fatal: mistyped key. process terminated.';
-        countdownTimeout = setTimeout(finishGame, GAME_OVER_MS);
+        updateProgress();
+        timerDisplay.className = `ending ${kind}`;
+        timerDisplay.textContent = ending.title;
+        noteDisplay.className = kind === 'dead' ? 'warn' : 'ending-note';
+        noteDisplay.textContent = ending.note;
+        countdownTimeout = setTimeout(finishGame, ending.ms);
     }
+
+    // ウィンドウの幅が変わったら、問題文の大きさを合わせ直す
+    window.addEventListener('resize', () => {
+        if (phase === 'playing' || phase === 'paused') fitWordSize();
+    });
 
     window.addEventListener('keydown', e => {
         const key = e.key.toLowerCase();

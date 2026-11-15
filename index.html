@@ -6,7 +6,7 @@
     <meta name="description" content="エンジニア向けのターミナル風タイピングゲーム。24 言語・2900 問以上のコードで練習できます。">
     <title>Codtec | Programming Typing</title>
     <!-- ?v= は古いキャッシュを避けるための印。node tools/release.mjs <番号> で、data/registry.js の VERSION と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.0.2">
+    <link rel="stylesheet" href="codtec.css?v=2.1.0">
 </head>
 <body>
 
@@ -77,14 +77,16 @@
         <section id="result-screen" hidden></section>
 
         <footer id="app-footer">
+            <button id="bg-btn" class="bg-btn" type="button" title="背景を切り替える">BG: PLAIN</button>
             <span id="version-label"></span>
             <a href="https://github.com/ssmbc2929bartok/codtec/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">変更履歴</a>
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
 
-    <script src="data/registry.js?v=2.0.2"></script>
-    <script src="data/manifest.js?v=2.0.2"></script>
-    <script src="script.js?v=2.0.2"></script>
+    <script src="theme.js?v=2.1.0"></script>
+    <script src="data/registry.js?v=2.1.0"></script>
+    <script src="data/manifest.js?v=2.1.0"></script>
+    <script src="script.js?v=2.1.0"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 (function (global) {
     'use strict';
 
-    const VERSION = '2.0.2';
+    const VERSION = '2.1.0';
 
     // 1 問の長さの上限（これを超える行は読み込み時に除外して警告する）
     const MAX_LENGTH = 56;

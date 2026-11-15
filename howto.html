@@ -6,7 +6,7 @@
     <meta name="description" content="Codtec の遊び方。コース・モード・操作キー・記録の説明です。">
     <title>How to Play | Codtec</title>
     <!-- ?v= は node tools/release.mjs <番号> で index.html と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.0.2">
+    <link rel="stylesheet" href="codtec.css?v=2.1.0">
 </head>
 <body class="doc-page">
 
@@ -64,7 +64,7 @@
                     <tr><td>CUSTOM</td><td>ルールを自分で決めて遊びます。</td><td>保存されません</td></tr>
                 </table>
                 <p>自己ベストは、言語・コース・モードの組み合わせごとに、このブラウザに保存されます。</p>
-                <p>ミスの上限に達して終わったときは、画面に TERMINATED と出てから結果画面へ進みます。</p>
+                <p>ゲームが終わると、終了の表示が出てから結果画面へ進みます。決めた問題数を打ち切ると FINISH!、持ち時間がなくなると TIME UP!、ミスの上限に達すると TERMINATED です。</p>
 
                 <h3>CUSTOM で決められるルール</h3>
                 <table>
@@ -112,14 +112,20 @@
                 </ul>
             </section>
 
+            <section>
+                <h2>08. 背景</h2>
+                <p>画面左下の BG ボタンを押すたびに、背景が PLAIN（無地）、GRID（方眼）、CIRCUIT（基板）、CRT（走査線）の順に切り替わります。選んだ背景は保存されます。</p>
+            </section>
+
             <p class="howto-back"><a class="btn-gradient" href="./">ゲームを始める</a></p>
         </main>
 
         <footer id="app-footer">
+            <button id="bg-btn" class="bg-btn" type="button" title="背景を切り替える">BG: PLAIN</button>
             <a href="https://github.com/ssmbc2929bartok/codtec/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">変更履歴</a>
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
-
+    <script src="theme.js?v=2.1.0"></script>
 </body>
 </html>
