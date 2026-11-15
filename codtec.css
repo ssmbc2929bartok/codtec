@@ -43,14 +43,14 @@ body {
     position: relative;
     text-align: center;
     border: 1px solid var(--border);
-    padding: 36px 40px 20px;
+    padding: 22px 40px 14px;
     background: var(--panel-bg);
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
     border-radius: 12px;
     width: min(960px, 100%);
 }
 
-h1 { color: var(--accent-blue); letter-spacing: 8px; margin: 0 0 8px; font-size: 2.5rem; }
+h1 { color: var(--accent-blue); letter-spacing: 8px; margin: 0 0 2px; font-size: 2rem; }
 
 kbd {
     display: inline-block;
@@ -68,17 +68,17 @@ kbd {
 /* --- メニュー --- */
 .portal-link { position: absolute; top: 14px; left: 14px; padding: 6px 12px; font-size: 0.75rem; }
 .howto-link { position: absolute; top: 14px; right: 14px; padding: 6px 12px; font-size: 0.75rem; letter-spacing: 1px; }
-.menu-message { min-height: 1.4em; margin: 0 0 12px; font-size: 0.85rem; color: var(--error-red); }
-.selection-group { margin-bottom: 22px; }
-.label { font-size: 0.8rem; color: var(--muted); margin: 0 0 10px; letter-spacing: 2px; }
+.menu-message { min-height: 1.2em; margin: 0 0 6px; font-size: 0.8rem; color: var(--error-red); }
+.selection-group { margin-bottom: 14px; }
+.label { font-size: 0.75rem; color: var(--muted); margin: 0 0 6px; letter-spacing: 2px; }
 .label span { color: #6e7681; letter-spacing: 0; }
-.desc { min-height: 1.3em; margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); }
+.desc { min-height: 1.3em; margin: 5px 0 0; font-size: 0.75rem; color: var(--muted); }
 
 .lang-group {
     display: flex;
     align-items: baseline;
     gap: 6px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-align: left;
 }
 .group-label {
@@ -97,13 +97,13 @@ kbd {
 .chip-row { justify-content: center; }
 
 .chip {
-    padding: 6px 12px;
+    padding: 4px 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: #161b22;
     color: var(--text);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
@@ -165,8 +165,8 @@ kbd {
 .custom-help, .custom-summary { grid-column: 1 / -1; margin: 2px 0 0; font-size: 0.75rem; color: var(--muted); }
 .custom-summary { color: var(--accent-cyan); letter-spacing: 1px; }
 
-.best-display { min-height: 1.4em; margin: 0; font-size: 0.9rem; color: var(--gold); letter-spacing: 1px; }
-.key-hint { margin: 14px 0 0; font-size: 0.75rem; color: #6e7681; }
+.best-display { min-height: 1.3em; margin: 0; font-size: 0.85rem; color: var(--gold); letter-spacing: 1px; }
+.key-hint { margin: 8px 0 0; font-size: 0.7rem; color: #6e7681; }
 
 /* --- ボタン --- */
 .btn-gradient {
@@ -191,9 +191,10 @@ kbd {
 #start-btn.btn-gradient {
     background-image: linear-gradient(to right, #00f3ff 10%, #39ff14 90%);
     color: #06210a;
-    width: min(520px, 100%);
-    font-size: 1.5rem;
-    margin-top: 12px;
+    width: min(480px, 100%);
+    padding: 8px 25px;
+    font-size: 1.25rem;
+    margin-top: 8px;
 }
 #start-btn:disabled { filter: grayscale(1); opacity: 0.2; cursor: not-allowed; }
 
@@ -401,7 +402,7 @@ kbd {
     display: flex;
     justify-content: flex-end;
     gap: 14px;
-    margin-top: 26px;
+    margin-top: 14px;
     font-size: 0.72rem;
     color: #6e7681;
 }
