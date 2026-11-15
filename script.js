@@ -21,18 +21,33 @@
     //   seconds : 持ち時間（秒）。なくなったら終了
     //   bonus   : 1 問クリアするごとに持ち時間へ足す秒数
     //   penalty : 1 回ミスするごとに持ち時間から引く秒数（0.1 秒きざみ）
-    //   penaltyEvery : この問題数をクリアするごとに、1 回のミスで引く秒数が penalty ずつ増える
-    //                  （50 なら 49 問目までは 0、50 問目から penalty、100 問目から penalty の 2 倍。省略は最初から penalty）
+    //   penaltyCurve : クリアした問題数に応じて、1 回のミスで引く秒数を変える表（missPenalty を参照）
     //   lives   : ミスがこの回数に達したら終了
     // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
     // milestone を付けたモードでは、その問題数をクリアするごとに短い知らせを出す。
     // color はメニューの枠線と結果のスコアに使う色。
+    // MARATHON のミスのペナルティ。start 問クリアしたら base 秒になり、
+    // そのあとは every 問クリアするごとに増える（増える量は、何問目までかで steps から選ぶ）。
+    //   20 問: 0.1 秒 → 30・40・50 問: +0.1 秒ずつ → 60〜100 問: +0.2 秒ずつ → 110 問以降: +0.3 秒ずつ
+    // max 秒より重くはならない（220 問で 5 秒に届く）。
+    const MARATHON_PENALTY = {
+        start: 20,
+        base: 0.1,
+        every: 10,
+        max: 5,
+        steps: [
+            { until: 50, add: 0.1 },
+            { until: 100, add: 0.2 },
+            { until: Infinity, add: 0.3 },
+        ],
+    };
+
     const MODES = [
         { id: 'time-trial', label: `${TRIAL_WORDS} WORDS TRIAL`, desc: `${TRIAL_WORDS} 問を打ち切るまでの速さを競う`, rules: { words: TRIAL_WORDS }, score: 'time', color: '#ffd700' },
         { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
         { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
         { id: 'score-attack-120', label: '120s SCORE ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
-        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。50 問クリアするごとに、1 回のミスで減る時間が 0.1 秒ずつ増える', rules: { seconds: 30, bonus: 10, penalty: 0.1, penaltyEvery: 50 }, milestone: 10, score: 'words', color: '#ffa94d' },
+        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。20 問目から、ミスすると時間が減り、10 問ごとに重くなる', rules: { seconds: 30, bonus: 10, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
         { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
         { id: 'custom', label: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
@@ -56,7 +71,7 @@
             rules[key] = clampRule(key, raw && raw[key]);
         });
         if (!rules.seconds) { rules.bonus = 0; rules.penalty = 0; } // 持ち時間がなければ増減もない
-        rules.penaltyEvery = Math.max(0, Math.floor(Number(raw && raw.penaltyEvery) || 0));
+        rules.penaltyCurve = (raw && raw.penaltyCurve) || null;
         // 終わる条件が 1 つもないと終われないので、10 問で終わるようにする
         if (!rules.words && !rules.seconds && !rules.lives) rules.words = TRIAL_WORDS;
         return rules;
@@ -473,19 +488,24 @@
         return seconds + bonus * game.wordIdx - game.penaltyTotal;
     }
 
-    // いま 1 回ミスしたときに減る秒数。penaltyEvery があれば、クリアした問題数に応じて増える
+    // いま 1 回ミスしたときに減る秒数。penaltyCurve があれば、クリアした問題数に応じて増える
     function missPenalty(words = game.wordIdx) {
-        const { penalty, penaltyEvery } = game.rules;
-        const level = penaltyEvery ? Math.floor(words / penaltyEvery) : 1;
-        return Math.round(penalty * level * 10) / 10;
+        const { penalty, penaltyCurve } = game.rules;
+        if (!penaltyCurve) return penalty;
+        if (words < penaltyCurve.start) return 0;
+        let seconds = penaltyCurve.base;
+        for (let at = penaltyCurve.start + penaltyCurve.every; at <= words; at += penaltyCurve.every) {
+            seconds += penaltyCurve.steps.find(step => at <= step.until).add;
+        }
+        return Math.round(Math.min(seconds, penaltyCurve.max) * 10) / 10;
     }
 
     // 決まった問題数をクリアするごとに、プレイの邪魔にならない短い知らせを出す
     function showMilestone() {
         const every = game.mode.milestone;
         if (!every || game.wordIdx === 0 || game.wordIdx % every !== 0) return;
-        const { penalty, penaltyEvery } = game.rules;
-        const penaltyUp = penalty && penaltyEvery && game.wordIdx % penaltyEvery === 0;
+        // この区切りでペナルティが重くなったら、その値も知らせる
+        const penaltyUp = missPenalty() > missPenalty(game.wordIdx - 1);
         showToast(
             penaltyUp ? `${game.wordIdx} WORDS  |  MISS PENALTY -${missPenalty().toFixed(1)}s` : `${game.wordIdx} WORDS CLEARED`,
             penaltyUp ? 'warn' : ''
