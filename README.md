@@ -25,6 +25,8 @@ https://ssmbar.com/codtec/
 | DATA / FUNCTIONAL | SQL / R / Haskell / Elixir |
 | TOOLS / INFRA | Shell / Linux / Git / Docker |
 
+言語の先頭にある ALL LANGS を選ぶと、全言語をまたいで出題します。SUDDEN DEATH は問題切れを防ぐため、選んだ言語にかかわらず全言語から出題します。
+
 ### 5 つのコース
 
 言語ごとに、出題する範囲を選べます。コースごとに文字の色が変わります。
@@ -47,7 +49,7 @@ https://ssmbar.com/codtec/
 | 60s SCORE ATTACK | 60 秒間で何問打てるか |
 | 120s SCORE ATTACK | 120 秒間で何問打てるか |
 | MARATHON | 持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。何問続けられるか |
-| SUDDEN DEATH | 1 回でもミスしたら終了。何問続けられるか |
+| SUDDEN DEATH | 1 回でもミスしたら終了。何問続けられるか。全言語から出題 |
 | CUSTOM | 問題数・持ち時間・1 問ごとの追加時間・ミスの上限を自分で決めて遊ぶ。記録は保存されない |
 
 ### そのほか
@@ -97,6 +99,16 @@ node tools/validate.mjs
 ```bash
 python3 -m http.server 8765
 ```
+
+## 🚚 公開のしかた
+
+https://ssmbar.com/codtec/ は、このリポジトリの `codtec/` フォルダの中身を配信しています。ルートのファイルを直したら、コミットの前に次を実行して `codtec/` を作り直します。
+
+```bash
+node tools/sync-public.mjs
+```
+
+`codtec/` の中は直接編集しません。ずれがないかだけ調べるには `node tools/sync-public.mjs --check` を使います。
 
 ## 📂 今後のアップデート予定
 

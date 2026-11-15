@@ -31,7 +31,11 @@
     const languages = [];
     const byId = {};
 
-    // テキストブロックを { コースID: [{ text, note, course }] } に変換する
+    // 全言語をまとめた「言語横断」の id と、その中身（言語が登録されるたびに作り直す）
+    const MIX_ID = 'mix';
+    let mixCache = null;
+
+    // テキストブロックを { コースID: [{ text, note, course, lang }] } に変換する
     function parse(langId, source) {
         const sets = {};
         const seen = new Set();
@@ -75,7 +79,7 @@
                 return;
             }
             seen.add(text);
-            sets[current].push({ text, note, course: current });
+            sets[current].push({ text, note, course: current, lang: langId });
         });
 
         return sets;
@@ -112,11 +116,35 @@
         };
         languages.push(lang);
         byId[lang.id] = lang;
+        mixCache = null;
+    }
+
+    // 全言語の問題をコースごとにまとめた、言語横断用の「言語」を返す
+    function getMix() {
+        if (!mixCache) {
+            const sets = {};
+            COURSES.forEach(c => {
+                const items = languages.flatMap(l => l.sets[c.id] || []);
+                if (items.length > 0) sets[c.id] = items;
+            });
+            mixCache = {
+                id: MIX_ID,
+                name: 'ALL LANGS',
+                group: null,
+                sets,
+                total: languages.reduce((n, l) => n + l.total, 0),
+            };
+        }
+        return mixCache;
+    }
+
+    function get(id) {
+        return id === MIX_ID ? getMix() : byId[id];
     }
 
     // コースを指定して問題の配列を取り出す（'all' なら全コース）
     function getPool(langId, courseId) {
-        const lang = byId[langId];
+        const lang = get(langId);
         if (!lang) return [];
         if (courseId && courseId !== 'all' && lang.sets[courseId]) {
             return lang.sets[courseId].slice();
@@ -132,7 +160,8 @@
         languages,
         warnings,
         register,
-        get: id => byId[id],
+        MIX_ID,
+        get,
         getPool,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

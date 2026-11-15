@@ -108,6 +108,16 @@
     function getMode(id) {
         return MODES.find(m => m.id === id);
     }
+
+    // 言語横断を必ず使うモード（問題切れを防ぐため、全言語から出題する）
+    const MIX_ONLY_MODES = ['sudden-death'];
+
+    // 実際に出題に使う言語。言語横断が必須のモードでは、選んだ言語にかかわらず全言語になる
+    function activeLang(sel = selection) {
+        return MIX_ONLY_MODES.includes(sel.mode) ? Codtec.MIX_ID : sel.lang;
+    }
+
+    const langName = id => Codtec.get(id).name;
     const courseLabel = id => (id === 'all' ? 'ALL' : Codtec.COURSES.find(c => c.id === id).label);
 
     // --- 画面の切り替え ---
@@ -139,27 +149,37 @@
         return ['all', ...Codtec.COURSES.filter(c => lang.sets[c.id] && lang.sets[c.id].length > 0).map(c => c.id)];
     }
 
-    function renderMenu() {
-        const lang = Codtec.get(selection.lang);
+    function makeLangRow(labelText, langs) {
+        const row = document.createElement('div');
+        row.className = 'lang-group';
+        const label = document.createElement('span');
+        label.className = 'group-label';
+        label.textContent = labelText;
+        const chips = document.createElement('div');
+        chips.className = 'group-chips';
+        langs.forEach(l => {
+            chips.appendChild(makeChip(l.name, null, l.id === activeLang(), () => select({ lang: l.id })));
+        });
+        row.append(label, chips);
+        return row;
+    }
 
-        // 言語
+    function renderMenu() {
+        const lang = Codtec.get(activeLang());
+        const mixForced = MIX_ONLY_MODES.includes(selection.mode);
+
+        // 言語（先頭は、全言語から出題する言語横断）
         const langBox = $('lang-selector');
         langBox.textContent = '';
+        langBox.classList.toggle('lang-locked', mixForced);
+        langBox.appendChild(makeLangRow('CROSS-LANGUAGE', [Codtec.get(Codtec.MIX_ID)]));
+        $('lang-note').textContent = mixForced
+            ? `${getMode(selection.mode).label} は、問題切れを防ぐために全言語から出題します`
+            : '';
         Codtec.GROUPS.forEach(group => {
             const members = Codtec.languages.filter(l => l.group === group.id);
             if (members.length === 0) return;
-            const row = document.createElement('div');
-            row.className = 'lang-group';
-            const label = document.createElement('span');
-            label.className = 'group-label';
-            label.textContent = group.label;
-            const chips = document.createElement('div');
-            chips.className = 'group-chips';
-            members.forEach(l => {
-                chips.appendChild(makeChip(l.name, null, l.id === selection.lang, () => select({ lang: l.id })));
-            });
-            row.append(label, chips);
-            langBox.appendChild(row);
+            langBox.appendChild(makeLangRow(group.label, members));
         });
         const totalWords = Codtec.languages.reduce((n, l) => n + l.total, 0);
         $('lang-count').textContent = `(${Codtec.languages.length} 言語 / ${totalWords} 問)`;
@@ -196,7 +216,7 @@
             $('custom-summary').textContent = `RULE: ${ruleSummary(normalizeRules(selection.custom))}`;
         }
 
-        const best = readBest(selection);
+        const best = readBest({ ...selection, lang: activeLang() });
         if (isCustom) $('best-display').textContent = 'BEST: N/A';
         else $('best-display').textContent = best === null ? 'BEST: ---' : `BEST: ${formatScore(mode, best)}`;
     }
@@ -215,7 +235,7 @@
 
     function select(change) {
         selection = { ...selection, ...change };
-        const lang = Codtec.get(selection.lang);
+        const lang = Codtec.get(activeLang());
         if (!availableCourses(lang).includes(selection.course)) selection.course = 'all';
         store.set('codtec_selection', JSON.stringify(selection));
         menuMessage.textContent = '';
@@ -256,13 +276,14 @@
     }
 
     function startGame() {
-        const pool = Codtec.getPool(selection.lang, selection.course);
+        const pool = Codtec.getPool(activeLang(), selection.course);
         if (pool.length === 0) return;
         if (document.activeElement) document.activeElement.blur();
 
         stopTimers();
         game = {
-            sel: { ...selection },
+            sel: { ...selection, lang: activeLang() }, // 記録と表示には、実際に出題した言語を使う
+            mixed: activeLang() === Codtec.MIX_ID,
             mode: getMode(selection.mode),
             rules: normalizeRules(selection.mode === 'custom' ? selection.custom : getMode(selection.mode).rules),
             dead: false,     // ミスの上限で終わったか
@@ -345,7 +366,9 @@
         // コースごとに文字色を変える
         wordDisplay.dataset.course = game.target.course;
         courseTag.dataset.course = game.target.course;
-        courseTag.textContent = courseLabel(game.target.course);
+        courseTag.textContent = game.mixed
+            ? `${langName(game.target.lang)} / ${courseLabel(game.target.course)}`
+            : courseLabel(game.target.course);
 
         wordDisplay.textContent = '';
         wordDisplay.dataset.size = sizeFor(game.target.text.length);
@@ -524,8 +547,8 @@
             return;
         }
 
-        const lang = Codtec.get(selection.lang);
-        const langIds = Codtec.GROUPS.flatMap(g => Codtec.languages.filter(l => l.group === g.id).map(l => l.id));
+        const lang = Codtec.get(activeLang());
+        const langIds = [Codtec.MIX_ID, ...Codtec.GROUPS.flatMap(g => Codtec.languages.filter(l => l.group === g.id).map(l => l.id))];
 
         if (e.key === 'Enter') { e.preventDefault(); startGame(); }
         else if (e.key === 'ArrowRight') { e.preventDefault(); select({ lang: step(langIds, selection.lang, 1) }); }
@@ -636,12 +659,12 @@ ${SITE_URL}`;
         `;
         resultScreen.querySelector('.result-context').textContent = `${langText} / ${g.mode.label}`;
         resultScreen.querySelector('.result-best').textContent = bestText;
-        renderReview(g.history);
+        renderReview(g.history, g.mixed);
         show('result');
     }
 
     // プレイした問題を、コース・ミス回数・解説つきで並べる
-    function renderReview(history) {
+    function renderReview(history, mixed) {
         const box = resultScreen.querySelector('.review');
         const list = box.querySelector('.review-list');
         if (history.length === 0) {
@@ -661,6 +684,12 @@ ${SITE_URL}`;
             const code = document.createElement('code');
             code.textContent = entry.item.text;
             head.append(tag, code);
+            if (mixed) {
+                const lang = document.createElement('span');
+                lang.className = 'review-flag review-lang';
+                lang.textContent = langName(entry.item.lang);
+                head.appendChild(lang);
+            }
 
             if (!entry.done) {
                 const undone = document.createElement('span');
@@ -724,7 +753,7 @@ ${SITE_URL}`;
         selection.custom = { ...CUSTOM_DEFAULT, ...(selection.custom && typeof selection.custom === 'object' ? selection.custom : {}) };
         if (!Codtec.get(selection.lang)) selection.lang = Codtec.languages[0].id;
         if (!getMode(selection.mode)) selection.mode = MODES[0].id;
-        if (!availableCourses(Codtec.get(selection.lang)).includes(selection.course)) selection.course = 'all';
+        if (!availableCourses(Codtec.get(activeLang())).includes(selection.course)) selection.course = 'all';
 
         startBtn.disabled = false;
         goToMenu();

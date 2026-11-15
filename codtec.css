@@ -89,6 +89,8 @@ kbd {
     text-align: right;
     padding-right: 6px;
 }
+.lang-locked .chip:not(.active) { opacity: 0.35; }
+.review-lang { color: var(--accent-blue); }
 .group-chips, .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-row { justify-content: center; }
 
