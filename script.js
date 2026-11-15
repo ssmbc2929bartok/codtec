@@ -143,8 +143,13 @@
         return MODES.find(m => m.id === id);
     }
 
-    // 言語横断を必ず使うモード（問題切れを防ぐため、全言語から出題する）
+    // 言語横断を必ず使うモード（問題切れを防ぐため、全言語・全コースから出題する）
     const MIX_ONLY_MODES = ['marathon'];
+
+    // 実際に出題に使うコース。言語横断が必須のモードでは、選んだコースにかかわらず全コースになる
+    function activeCourse(sel = selection) {
+        return MIX_ONLY_MODES.includes(sel.mode) ? 'all' : sel.course;
+    }
 
     // 「選んだ複数の言語から出題する」ことを表す、言語の id
     const PICK_ID = 'pick';
@@ -245,7 +250,7 @@
         langBox.textContent = '';
         langBox.classList.toggle('lang-locked', mixForced);
         langBox.appendChild(makeLangRow('CROSS-LANGUAGE', [Codtec.get(Codtec.MIX_ID), { id: PICK_ID, name: 'PICK LANGS' }]));
-        if (mixForced) $('lang-note').textContent = `${getMode(selection.mode).label} は、問題切れを防ぐために全言語から出題します`;
+        if (mixForced) $('lang-note').textContent = `${getMode(selection.mode).label} は、問題切れを防ぐために全言語・全コースから出題します`;
         else if (picking) $('lang-note').textContent = `${pickedIds().length} 言語を選択中。言語を押すと、出題する言語に入れたり外したりできます`;
         else $('lang-note').textContent = '';
         Codtec.GROUPS.forEach(group => {
@@ -259,11 +264,12 @@
         // コース
         const courseBox = $('course-selector');
         courseBox.textContent = '';
+        courseBox.classList.toggle('lang-locked', mixForced);
         availableCourses(lang).forEach(id => {
             const count = id === 'all' ? lang.total : lang.sets[id].length;
-            courseBox.appendChild(makeChip(courseLabel(id), count, id === selection.course, () => select({ course: id }), id === 'all' ? null : id));
+            courseBox.appendChild(makeChip(courseLabel(id), count, id === activeCourse(), () => select({ course: id }), id === 'all' ? null : id));
         });
-        const course = Codtec.COURSES.find(c => c.id === selection.course);
+        const course = Codtec.COURSES.find(c => c.id === activeCourse());
         $('course-desc').textContent = course ? course.desc : 'すべてのコースからまとめて出題';
 
         // モード
@@ -288,7 +294,7 @@
             $('custom-summary').textContent = `RULE: ${ruleSummary(normalizeRules(selection.custom))}`;
         }
 
-        const best = readBest({ ...selection, lang: recordLang() });
+        const best = readBest({ ...selection, lang: recordLang(), course: activeCourse() });
         if (isCustom) $('best-display').textContent = 'BEST: N/A';
         else $('best-display').textContent = best === null ? 'BEST: ---' : `BEST: ${formatScore(mode, best)}`;
     }
@@ -356,13 +362,13 @@
 
     function startGame() {
         const langData = activeLangData();
-        const pool = Codtec.getPool(langData, selection.course);
+        const pool = Codtec.getPool(langData, activeCourse());
         if (pool.length === 0) return;
         if (document.activeElement) document.activeElement.blur();
 
         stopTimers();
         game = {
-            sel: { ...selection, lang: recordLang() }, // 記録には、実際に出題した言語を使う
+            sel: { ...selection, lang: recordLang(), course: activeCourse() }, // 記録には、実際に出題した言語とコースを使う
             langData,
             mixed: langData.id === Codtec.MIX_ID || langData.id === PICK_ID,
             mode: getMode(selection.mode),

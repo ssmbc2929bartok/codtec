@@ -4,7 +4,7 @@ Terminal-Style Typing Game
 
 プログラマーやエンジニアのために設計された、ターミナル風の Web タイピングゲームです。実際のコードやコマンドを打って練習できます。
 
-現在のバージョンは v2.3.1 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
+現在のバージョンは v2.3.2 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
 
 ## 🚀 Live Demo
 
@@ -25,7 +25,7 @@ https://ssmbc2929bartok.github.io/codtec/
 | DATA / FUNCTIONAL | SQL / R / Haskell / Elixir |
 | TOOLS / INFRA | Shell / Linux / Git / Docker |
 
-言語の先頭にある ALL LANGS を選ぶと、全言語をまたいで出題します。PICK LANGS を選ぶと、自分で選んだ複数の言語だけから出題します。MARATHON は問題切れを防ぐため、選んだ言語にかかわらず全言語から出題します。
+言語の先頭にある ALL LANGS を選ぶと、全言語をまたいで出題します。PICK LANGS を選ぶと、自分で選んだ複数の言語だけから出題します。MARATHON は問題切れを防ぐため、選んだ言語やコースにかかわらず、全言語・全コースから出題します。
 
 ### 5 つのコース
 
@@ -48,7 +48,7 @@ https://ssmbc2929bartok.github.io/codtec/
 | 30s SCORE ATTACK | 30 秒間で何問打てるか |
 | 60s SCORE ATTACK | 60 秒間で何問打てるか |
 | 120s SCORE ATTACK | 120 秒間で何問打てるか |
-| MARATHON | 持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる（最大 5 秒）。何問続けられるか。全言語から出題 |
+| MARATHON | 持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる（最大 5 秒）。何問続けられるか。全言語・全コースから出題 |
 | SUDDEN DEATH | 1 回でもミスしたら終了。何問続けられるか |
 | CUSTOM | 問題数・持ち時間・1 問ごとの追加時間・1 ミスごとの減少時間・ミスの上限を自分で決めて遊ぶ。記録は保存されない |
 
@@ -108,7 +108,7 @@ main ブランチにプッシュすると、GitHub Pages が https://ssmbc2929ba
 公開する変更をコミットする前に、新しいバージョン番号で次を実行します。画面のバージョン表記と、CSS や JS を読み込む URL の印（`?v=`）がまとめて書き換わります。
 
 ```bash
-node tools/release.mjs 2.3.2
+node tools/release.mjs 2.3.3
 ```
 
 この印が前と同じままだと、ブラウザが古い CSS や JS を使い続けて、更新が反映されないことがあります。
