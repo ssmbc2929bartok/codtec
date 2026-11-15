@@ -30,6 +30,14 @@
                 <p class="label">03. SELECT MODE</p>
                 <div id="mode-selector" class="chip-row"></div>
                 <p id="mode-desc" class="desc"></p>
+                <div id="custom-panel" class="custom-panel" hidden>
+                    <label>問題数 <input id="custom-words" type="number" min="0" max="999" inputmode="numeric"></label>
+                    <label>持ち時間（秒） <input id="custom-seconds" type="number" min="0" max="3600" inputmode="numeric"></label>
+                    <label>1 問ごとの追加（秒） <input id="custom-bonus" type="number" min="0" max="60" inputmode="numeric"></label>
+                    <label>ミスの上限（回） <input id="custom-lives" type="number" min="0" max="99" inputmode="numeric"></label>
+                    <p class="custom-help">0 にした項目は「なし」になります。どれかの条件を満たした時点で終了します。</p>
+                    <p id="custom-summary" class="custom-summary"></p>
+                </div>
             </div>
 
             <p id="best-display" class="best-display"></p>
@@ -37,7 +45,7 @@
                 <span>[ MISSION START ]</span>
             </button>
             <p class="key-hint">
-                <kbd>&larr;</kbd><kbd>&rarr;</kbd> 言語　<kbd>&uarr;</kbd><kbd>&darr;</kbd> コース　<kbd>1</kbd>-<kbd>4</kbd> モード　<kbd>Enter</kbd> 開始
+                <kbd>&larr;</kbd><kbd>&rarr;</kbd> 言語　<kbd>&uarr;</kbd><kbd>&darr;</kbd> コース　<kbd>1</kbd>-<kbd>7</kbd> モード　<kbd>Enter</kbd> 開始
             </p>
         </section>
 

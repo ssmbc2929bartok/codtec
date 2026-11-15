@@ -134,6 +134,33 @@ kbd {
     background: var(--course);
 }
 
+.custom-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+    width: min(520px, 100%);
+    margin: 12px auto 0;
+    padding: 14px 16px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    text-align: left;
+}
+.custom-panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.8rem; color: var(--text); }
+.custom-panel input {
+    width: 76px;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0d1117;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    text-align: right;
+}
+.custom-panel input:focus { outline: 2px solid var(--accent-blue); outline-offset: 1px; }
+.custom-help, .custom-summary { grid-column: 1 / -1; margin: 2px 0 0; font-size: 0.75rem; color: var(--muted); }
+.custom-summary { color: var(--accent-cyan); letter-spacing: 1px; }
+
 .best-display { min-height: 1.4em; margin: 0; font-size: 0.9rem; color: var(--gold); letter-spacing: 1px; }
 .key-hint { margin: 14px 0 0; font-size: 0.75rem; color: #6e7681; }
 
@@ -230,10 +257,11 @@ kbd {
 #note-display { min-height: 1.5em; margin-bottom: 22px; font-size: 0.9rem; color: var(--muted); }
 #note-display.warn { color: var(--error-red); }
 #timer-display { font-size: 1.5rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+#timer-display.bonus { color: var(--correct-green); }
 #timer-display.game-over {
-    font-size: 3rem;
+    font-size: 2.6rem;
     font-weight: bold;
-    letter-spacing: 12px;
+    letter-spacing: 8px;
     color: var(--error-red);
     text-shadow: 0 0 18px rgba(255, 68, 68, 0.7);
     animation: shake 0.12s 3;
@@ -351,6 +379,7 @@ kbd {
 .howto { text-align: left; font-size: 0.9rem; line-height: 1.8; }
 .howto section { margin-top: 28px; }
 .howto h2 { margin: 0 0 10px; font-size: 0.85rem; font-weight: normal; letter-spacing: 2px; color: var(--accent-blue); }
+.howto h3 { margin: 18px 0 6px; font-size: 0.85rem; font-weight: normal; color: var(--text); }
 .howto p { margin: 8px 0; }
 .howto ol, .howto ul { margin: 0; padding-left: 1.6em; }
 .howto li { margin: 4px 0; }
@@ -383,6 +412,7 @@ kbd {
     .group-label { flex: none; text-align: left; }
     #word-display { font-size: 2rem !important; }
     .key-hint { display: none; }
+    .custom-panel { grid-template-columns: 1fr; }
     .review-note { margin-left: 0; }
 }
 

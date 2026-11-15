@@ -5,20 +5,55 @@
 
     const TRIAL_WORDS = 10;
     const COUNTDOWN_STEP_MS = 800;
-    const GAME_OVER_MS = 1400; // SUDDEN DEATH でミスしたあと、「終了」を見せておく時間
+    const GAME_OVER_MS = 1400; // ミスの上限で終わったあと、TERMINATED を見せておく時間
 
     const SITE_URL = 'https://ssmbar.com/codtec/';
     const PORTAL_URL = 'https://ssmbar.com/';
     const FEEDBACK_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfiswxbXdiDrfv-ioF_M2Tyt3Vjkeo6WETMfemG2dpUdL4AQA/viewform';
 
-    // モードの定義。better は記録の比べ方（'low' は小さいほど良い）。seconds があるモードは制限時間つき。
+    // モードの定義。どのモードも、次の 4 つのルールの組み合わせで動く（0 や省略は「なし」）。
+    //   words   : この問題数を打ち切ったら終了
+    //   seconds : 持ち時間（秒）。なくなったら終了
+    //   bonus   : 1 問クリアするごとに持ち時間へ足す秒数
+    //   lives   : ミスがこの回数に達したら終了
+    // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
     // color はメニューの枠線と結果のスコアに使う色。
     const MODES = [
-        { id: 'time-trial', label: `${TRIAL_WORDS} WORDS TRIAL`, desc: `${TRIAL_WORDS} 問を打ち切るまでの速さを競う`, better: 'low', color: '#ffd700' },
-        { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', better: 'high', seconds: 30, color: '#00ffcc' },
-        { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', better: 'high', seconds: 60, color: '#ff7ad9' },
-        { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', better: 'high', color: '#ff5555' },
+        { id: 'time-trial', label: `${TRIAL_WORDS} WORDS TRIAL`, desc: `${TRIAL_WORDS} 問を打ち切るまでの速さを競う`, rules: { words: TRIAL_WORDS }, score: 'time', color: '#ffd700' },
+        { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
+        { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
+        { id: 'score-attack-120', label: '120s SCORE ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
+        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。何問続けられるかを競う', rules: { seconds: 30, bonus: 10 }, score: 'words', color: '#ffa94d' },
+        { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
+        { id: 'custom', label: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
+
+    // CUSTOM モードの初期設定と、各項目の上限
+    const CUSTOM_DEFAULT = { words: 0, seconds: 60, bonus: 5, lives: 3 };
+    const CUSTOM_MAX = { words: 999, seconds: 3600, bonus: 60, lives: 99 };
+
+    // ルールを { words, seconds, bonus, lives } の整数にそろえる
+    function normalizeRules(raw) {
+        const rules = {};
+        Object.keys(CUSTOM_MAX).forEach(key => {
+            const n = Math.floor(Number(raw && raw[key]));
+            rules[key] = Number.isFinite(n) ? Math.min(Math.max(n, 0), CUSTOM_MAX[key]) : 0;
+        });
+        if (!rules.seconds) rules.bonus = 0; // 持ち時間がなければ追加もない
+        // 終わる条件が 1 つもないと終われないので、10 問で終わるようにする
+        if (!rules.words && !rules.seconds && !rules.lives) rules.words = TRIAL_WORDS;
+        return rules;
+    }
+
+    // ルールを短い英語の説明にする（結果画面とシェア文面で使う）
+    function ruleSummary(rules) {
+        const parts = [];
+        if (rules.words) parts.push(`${rules.words} words`);
+        if (rules.seconds) parts.push(`${rules.seconds}s`);
+        if (rules.bonus) parts.push(`+${rules.bonus}s/word`);
+        if (rules.lives) parts.push(`${rules.lives} miss limit`);
+        return parts.join(', ');
+    }
 
     const $ = id => document.getElementById(id);
     const menuScreen = $('menu-screen');
@@ -32,10 +67,11 @@
     const pauseOverlay = $('pause-overlay');
     const menuMessage = $('menu-message');
     const courseTag = $('course-tag');
+    const customPanel = $('custom-panel');
 
     // phase: 'loading' | 'menu' | 'countdown' | 'playing' | 'paused' | 'ending' | 'result'
     let phase = 'loading';
-    let selection = { lang: 'cpp', course: 'all', mode: 'time-trial' };
+    let selection = { lang: 'cpp', course: 'all', mode: 'time-trial', custom: { ...CUSTOM_DEFAULT } };
     let game = null;
     let timerInterval = null;
     let countdownTimeout = null;
@@ -59,16 +95,19 @@
     }
 
     function readBest(sel) {
+        if (getMode(sel.mode).score === 'none') return null; // CUSTOM は記録を保存しない
         const raw = store.get(bestKey(sel));
         const value = raw === null ? NaN : parseFloat(raw);
         return Number.isFinite(value) ? value : null;
     }
 
-    function formatScore(modeId, value) {
-        return modeId === 'time-trial' ? `${value.toFixed(2)}s` : `${value} WORDS`;
+    function formatScore(mode, value) {
+        return mode.score === 'time' ? `${value.toFixed(2)}s` : `${value} WORDS`;
     }
 
-    const getMode = id => MODES.find(m => m.id === id);
+    function getMode(id) {
+        return MODES.find(m => m.id === id);
+    }
     const courseLabel = id => (id === 'all' ? 'ALL' : Codtec.COURSES.find(c => c.id === id).label);
 
     // --- 画面の切り替え ---
@@ -143,10 +182,35 @@
             chip.style.setProperty('--course', m.color);
             modeBox.appendChild(chip);
         });
-        $('mode-desc').textContent = getMode(selection.mode).desc;
+        const mode = getMode(selection.mode);
+        $('mode-desc').textContent = mode.desc;
+
+        // CUSTOM のときだけルールの入力欄を出す
+        const isCustom = mode.id === 'custom';
+        customPanel.hidden = !isCustom;
+        if (isCustom) {
+            Object.keys(CUSTOM_MAX).forEach(key => {
+                const input = $(`custom-${key}`);
+                if (document.activeElement !== input) input.value = selection.custom[key];
+            });
+            $('custom-summary').textContent = `RULE: ${ruleSummary(normalizeRules(selection.custom))}`;
+        }
 
         const best = readBest(selection);
-        $('best-display').textContent = best === null ? 'BEST: ---' : `BEST: ${formatScore(selection.mode, best)}`;
+        if (isCustom) $('best-display').textContent = 'BEST: N/A';
+        else $('best-display').textContent = best === null ? 'BEST: ---' : `BEST: ${formatScore(mode, best)}`;
+    }
+
+    // CUSTOM の入力欄が変わったら、設定を保存して説明を更新する
+    function onCustomInput() {
+        const custom = {};
+        Object.keys(CUSTOM_MAX).forEach(key => {
+            const n = Math.floor(Number($(`custom-${key}`).value));
+            custom[key] = Number.isFinite(n) ? Math.min(Math.max(n, 0), CUSTOM_MAX[key]) : 0;
+        });
+        selection.custom = custom;
+        store.set('codtec_selection', JSON.stringify(selection));
+        $('custom-summary').textContent = `RULE: ${ruleSummary(normalizeRules(custom))}`;
     }
 
     function select(change) {
@@ -200,6 +264,8 @@
         game = {
             sel: { ...selection },
             mode: getMode(selection.mode),
+            rules: normalizeRules(selection.mode === 'custom' ? selection.custom : getMode(selection.mode).rules),
+            dead: false,     // ミスの上限で終わったか
             pool,
             bag: [],
             target: null,
@@ -295,16 +361,24 @@
     }
 
     function updateProgress() {
-        const name = Codtec.get(game.sel.lang).name;
-        infoDisplay.textContent = game.mode.id === 'time-trial'
-            ? `${name} | PROGRESS: ${game.wordIdx + 1} / ${TRIAL_WORDS}`
-            : `${name} | WORDS CLEARED: ${game.wordIdx}`;
+        const { rules } = game;
+        const parts = [Codtec.get(game.sel.lang).name];
+        parts.push(rules.words
+            ? `PROGRESS: ${Math.min(game.wordIdx + 1, rules.words)} / ${rules.words}`
+            : `WORDS CLEARED: ${game.wordIdx}`);
+        if (rules.lives > 1) parts.push(`LIVES: ${Math.max(0, rules.lives - game.missCount)}`);
+        infoDisplay.textContent = parts.join(' | ');
+    }
+
+    // いまの持ち時間（秒）。1 問クリアするごとに bonus 秒ずつ増える
+    function timeAllowed() {
+        return game.rules.seconds + game.rules.bonus * game.wordIdx;
     }
 
     function updateTimer() {
         const elapsed = elapsedSeconds();
-        if (game.mode.seconds) {
-            const remaining = Math.max(0, game.mode.seconds - elapsed);
+        if (game.rules.seconds) {
+            const remaining = Math.max(0, timeAllowed() - elapsed);
             timerDisplay.textContent = `REMAINING: ${remaining.toFixed(2)}s`;
             if (remaining <= 0 && phase === 'playing') finishGame();
         } else {
@@ -365,7 +439,8 @@
             }
             game.history.push({ item: game.target, misses: game.wordMiss, done: true });
             game.wordIdx++;
-            if (game.mode.id === 'time-trial' && game.wordIdx >= TRIAL_WORDS) finishGame();
+            if (game.rules.bonus) flashBonus();
+            if (game.rules.words && game.wordIdx >= game.rules.words) finishGame();
             else setNextWord();
             return;
         }
@@ -378,19 +453,30 @@
         span.className = 'current';
         void span.offsetWidth; // アニメーションをやり直すための再描画
         span.className = 'current miss';
-        if (game.mode.id === 'sudden-death') showGameOver();
+        if (game.rules.lives && game.missCount >= game.rules.lives) showGameOver();
+        else updateProgress();
     }
 
-    // SUDDEN DEATH: ミスした文字を見せたまま「終了」を出し、少し置いてから結果へ進む
+    // 持ち時間が増えたことを、タイマーの色で一瞬知らせる
+    function flashBonus() {
+        timerDisplay.className = 'bonus';
+        setTimeout(() => {
+            if (timerDisplay.className === 'bonus') timerDisplay.className = '';
+        }, 400);
+    }
+
+    // ミスの上限に達したとき: ミスした文字を見せたまま TERMINATED を出し、少し置いてから結果へ進む
     function showGameOver() {
         game.elapsedMs += performance.now() - game.segmentStart;
+        game.dead = true;
+        updateProgress();
         phase = 'ending';
         clearInterval(timerInterval);
         timerInterval = null;
         timerDisplay.className = 'game-over';
-        timerDisplay.textContent = '終了';
+        timerDisplay.textContent = 'TERMINATED';
         noteDisplay.className = 'warn';
-        noteDisplay.textContent = 'MISS! ここまで';
+        noteDisplay.textContent = 'fatal: mistyped key. process terminated.';
         countdownTimeout = setTimeout(finishGame, GAME_OVER_MS);
     }
 
@@ -430,6 +516,14 @@
 
     function handleMenuKey(e) {
         if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        // CUSTOM の入力欄にいる間は、数字や矢印を入力欄に任せる
+        if (e.target instanceof HTMLInputElement) {
+            if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); startGame(); }
+            else if (e.key === 'Escape') e.target.blur();
+            return;
+        }
+
         const lang = Codtec.get(selection.lang);
         const langIds = Codtec.GROUPS.flatMap(g => Codtec.languages.filter(l => l.group === g.id).map(l => l.id));
 
@@ -460,6 +554,7 @@
         else goToMenu();
     });
     startBtn.addEventListener('click', startGame);
+    customPanel.addEventListener('input', onCustomInput);
 
     // --- 結果 ---
 
@@ -468,7 +563,7 @@
     function finishGame() {
         const g = game;
         let finalTime = elapsedSeconds();
-        if (g.mode.seconds) finalTime = Math.min(finalTime, g.mode.seconds);
+        if (g.rules.seconds) finalTime = Math.min(finalTime, timeAllowed());
         phase = 'result';
         stopTimers();
 
@@ -480,22 +575,30 @@
         const attempts = g.totalTyped + g.missCount;
         const accuracy = attempts > 0 ? ((g.totalTyped / attempts) * 100).toFixed(1) : '0.0';
 
-        const score = g.mode.id === 'time-trial' ? finalTime : g.wordIdx;
-        const scoreText = formatScore(g.mode.id, score);
+        const score = g.mode.score === 'time' ? finalTime : g.wordIdx;
+        const tracked = g.mode.score !== 'none';
+        const scoreText = tracked
+            ? formatScore(g.mode, score)
+            : `${g.wordIdx} WORDS / ${finalTime.toFixed(2)}s`;
 
-        // ハイスコア
-        const prevBest = readBest(g.sel);
-        const isNewRecord = prevBest === null || (g.mode.better === 'low' ? score < prevBest : score > prevBest);
-        if (isNewRecord) store.set(bestKey(g.sel), String(score));
-        const bestText = isNewRecord
-            ? (prevBest === null ? 'NEW RECORD!' : `NEW RECORD!  (前回のベスト: ${formatScore(g.mode.id, prevBest)})`)
-            : `BEST: ${formatScore(g.mode.id, prevBest)}`;
+        // ハイスコア（CUSTOM はルールが毎回違うので保存しない）
+        let isNewRecord = false;
+        let bestText = `RULE: ${ruleSummary(g.rules)}`;
+        if (tracked) {
+            const prevBest = readBest(g.sel);
+            isNewRecord = prevBest === null || (g.mode.score === 'time' ? score < prevBest : score > prevBest);
+            if (isNewRecord) store.set(bestKey(g.sel), String(score));
+            bestText = isNewRecord
+                ? (prevBest === null ? 'NEW RECORD!' : `NEW RECORD!  (前回のベスト: ${formatScore(g.mode, prevBest)})`)
+                : `BEST: ${formatScore(g.mode, prevBest)}`;
+        }
+        const modeText = tracked ? g.mode.id : `custom (${ruleSummary(g.rules)})`;
 
         const langName = Codtec.get(g.sel.lang).name;
         const langText = g.sel.course === 'all' ? langName : `${langName} (${courseLabel(g.sel.course)})`;
 
         const shareText = `[CODTEC_REPORT]
->> LANG: ${langText} / MODE: ${g.mode.id}
+>> LANG: ${langText} / MODE: ${modeText}
 >> RESULT: ${scoreText}
 >> KPM: ${kpm} / ACC: ${accuracy}%
 >> ERR_LOG: ${g.missCount} cases detected.
@@ -504,7 +607,7 @@ ${SITE_URL}`;
         const xLink = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&hashtags=codtec`;
 
         resultScreen.innerHTML = `
-            <div class="result-title">${g.mode.id === 'sudden-death' ? 'MISSION FAILED' : 'MISSION COMPLETE'}</div>
+            <div class="result-title">${g.dead ? 'MISSION FAILED' : 'MISSION COMPLETE'}</div>
             <div class="result-context"></div>
             <div class="result-score" style="color: ${g.mode.color}">${scoreText}</div>
             <div class="result-best${isNewRecord ? ' new' : ''}"></div>
@@ -618,6 +721,7 @@ ${SITE_URL}`;
             const saved = JSON.parse(store.get('codtec_selection') || 'null');
             if (saved && typeof saved === 'object') selection = { ...selection, ...saved };
         } catch (e) { /* 壊れた保存データは無視する */ }
+        selection.custom = { ...CUSTOM_DEFAULT, ...(selection.custom && typeof selection.custom === 'object' ? selection.custom : {}) };
         if (!Codtec.get(selection.lang)) selection.lang = Codtec.languages[0].id;
         if (!getMode(selection.mode)) selection.mode = MODES[0].id;
         if (!availableCourses(Codtec.get(selection.lang)).includes(selection.course)) selection.course = 'all';

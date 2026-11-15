@@ -58,9 +58,23 @@
                     <tr><td>10 WORDS TRIAL</td><td>10 問を打ち切るまでの速さを競います。</td><td>かかった時間（短いほど良い）</td></tr>
                     <tr><td>30s SCORE ATTACK</td><td>30 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>60s SCORE ATTACK</td><td>60 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
+                    <tr><td>120s SCORE ATTACK</td><td>120 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
+                    <tr><td>MARATHON</td><td>持ち時間 30 秒で始まり、1 問クリアするごとに 10 秒増えます。時間がなくなるまでに何問続けられるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>SUDDEN DEATH</td><td>1 回でもミスしたら終了です。何問続けられるかを競います。</td><td>打ち切った問題数</td></tr>
+                    <tr><td>CUSTOM</td><td>ルールを自分で決めて遊びます。</td><td>保存されません</td></tr>
                 </table>
                 <p>自己ベストは、言語・コース・モードの組み合わせごとに、このブラウザに保存されます。</p>
+                <p>ミスの上限に達して終わったときは、画面に TERMINATED と出てから結果画面へ進みます。</p>
+
+                <h3>CUSTOM で決められるルール</h3>
+                <table>
+                    <tr><th>項目</th><th>意味</th></tr>
+                    <tr><td>問題数</td><td>この数を打ち切ったら終了します。</td></tr>
+                    <tr><td>持ち時間（秒）</td><td>この時間がなくなったら終了します。</td></tr>
+                    <tr><td>1 問ごとの追加（秒）</td><td>1 問クリアするごとに、持ち時間がこの秒数だけ増えます。</td></tr>
+                    <tr><td>ミスの上限（回）</td><td>ミスがこの回数に達したら終了します。</td></tr>
+                </table>
+                <p>0 にした項目は「なし」になります。どれかの条件を満たした時点で終了します。全部を 0 にしたときは、10 問で終了します。</p>
             </section>
 
             <section>
@@ -69,7 +83,7 @@
                     <tr><th>場面</th><th>キー</th><th>動作</th></tr>
                     <tr><td>メニュー</td><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd></td><td>言語を選ぶ</td></tr>
                     <tr><td>メニュー</td><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>コースを選ぶ</td></tr>
-                    <tr><td>メニュー</td><td><kbd>1</kbd> - <kbd>4</kbd></td><td>モードを選ぶ</td></tr>
+                    <tr><td>メニュー</td><td><kbd>1</kbd> - <kbd>7</kbd></td><td>モードを選ぶ</td></tr>
                     <tr><td>メニュー</td><td><kbd>Enter</kbd></td><td>開始</td></tr>
                     <tr><td>プレイ中</td><td><kbd>Esc</kbd></td><td>一時停止</td></tr>
                     <tr><td>一時停止中</td><td><kbd>Esc</kbd> / <kbd>Enter</kbd></td><td>再開</td></tr>
