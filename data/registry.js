@@ -121,21 +121,26 @@
 
     // 全言語の問題をコースごとにまとめた、言語横断用の「言語」を返す
     function getMix() {
-        if (!mixCache) {
-            const sets = {};
-            COURSES.forEach(c => {
-                const items = languages.flatMap(l => l.sets[c.id] || []);
-                if (items.length > 0) sets[c.id] = items;
-            });
-            mixCache = {
-                id: MIX_ID,
-                name: 'ALL LANGS',
-                group: null,
-                sets,
-                total: languages.reduce((n, l) => n + l.total, 0),
-            };
-        }
+        if (!mixCache) mixCache = combine(MIX_ID, 'ALL LANGS', languages.map(l => l.id));
         return mixCache;
+    }
+
+    // 指定した言語の問題をコースごとにまとめて、1 つの「言語」として返す
+    function combine(id, name, langIds) {
+        const members = languages.filter(l => langIds.includes(l.id));
+        const sets = {};
+        COURSES.forEach(c => {
+            const items = members.flatMap(l => l.sets[c.id] || []);
+            if (items.length > 0) sets[c.id] = items;
+        });
+        return {
+            id,
+            name,
+            group: null,
+            members: members.map(l => l.id),
+            sets,
+            total: members.reduce((n, l) => n + l.total, 0),
+        };
     }
 
     function get(id) {
@@ -143,8 +148,9 @@
     }
 
     // コースを指定して問題の配列を取り出す（'all' なら全コース）
-    function getPool(langId, courseId) {
-        const lang = get(langId);
+    // lang には言語の id か、get() や combine() が返した言語を渡す
+    function getPool(langOrId, courseId) {
+        const lang = typeof langOrId === 'string' ? get(langOrId) : langOrId;
         if (!lang) return [];
         if (courseId && courseId !== 'all' && lang.sets[courseId]) {
             return lang.sets[courseId].slice();
@@ -162,6 +168,7 @@
         register,
         MIX_ID,
         get,
+        combine,
         getPool,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

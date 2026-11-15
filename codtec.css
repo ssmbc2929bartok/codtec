@@ -90,6 +90,8 @@ kbd {
     padding-right: 6px;
 }
 .lang-locked .chip:not(.active) { opacity: 0.35; }
+.chip.picked { border-color: var(--accent-cyan); color: #fff; background: rgba(0, 255, 204, 0.12); }
+.chip.picked::before { content: '\2713'; margin-right: 6px; color: var(--accent-cyan); }
 .review-lang { color: var(--accent-blue); }
 .group-chips, .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-row { justify-content: center; }
@@ -260,6 +262,7 @@ kbd {
 #note-display.warn { color: var(--error-red); }
 #timer-display { font-size: 1.5rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 #timer-display.bonus { color: var(--correct-green); }
+#timer-display.penalty { color: var(--error-red); }
 #timer-display.game-over {
     font-size: 2.6rem;
     font-weight: bold;

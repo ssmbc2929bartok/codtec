@@ -15,6 +15,8 @@
     //   words   : この問題数を打ち切ったら終了
     //   seconds : 持ち時間（秒）。なくなったら終了
     //   bonus   : 1 問クリアするごとに持ち時間へ足す秒数
+    //   penalty : 1 回ミスするごとに持ち時間から引く秒数（0.1 秒きざみ）
+    //   penaltyAfter : この問題数をクリアしてからのミスだけ penalty を引く（省略は最初から）
     //   lives   : ミスがこの回数に達したら終了
     // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
     // color はメニューの枠線と結果のスコアに使う色。
@@ -23,23 +25,31 @@
         { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
         { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
         { id: 'score-attack-120', label: '120s SCORE ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
-        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。何問続けられるかを競う', rules: { seconds: 30, bonus: 10 }, score: 'words', color: '#ffa94d' },
+        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。50 問クリア以降は、1 回ミスするごとに 0.1 秒減る', rules: { seconds: 30, bonus: 10, penalty: 0.1, penaltyAfter: 50 }, score: 'words', color: '#ffa94d' },
         { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
         { id: 'custom', label: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
 
     // CUSTOM モードの初期設定と、各項目の上限
-    const CUSTOM_DEFAULT = { words: 0, seconds: 60, bonus: 5, lives: 3 };
-    const CUSTOM_MAX = { words: 999, seconds: 3600, bonus: 60, lives: 99 };
+    const CUSTOM_DEFAULT = { words: 0, seconds: 60, bonus: 5, penalty: 0, lives: 3 };
+    const CUSTOM_MAX = { words: 999, seconds: 3600, bonus: 60, penalty: 10, lives: 99 };
 
-    // ルールを { words, seconds, bonus, lives } の整数にそろえる
+    // ルールの値を 0 以上・上限以下の数にする。penalty だけは 0.1 秒きざみ、ほかは整数
+    function clampRule(key, value) {
+        const raw = Number(value);
+        if (!Number.isFinite(raw)) return 0;
+        const n = key === 'penalty' ? Math.round(raw * 10) / 10 : Math.floor(raw);
+        return Math.min(Math.max(n, 0), CUSTOM_MAX[key]);
+    }
+
+    // ルールを { words, seconds, bonus, penalty, lives } の数にそろえる
     function normalizeRules(raw) {
         const rules = {};
         Object.keys(CUSTOM_MAX).forEach(key => {
-            const n = Math.floor(Number(raw && raw[key]));
-            rules[key] = Number.isFinite(n) ? Math.min(Math.max(n, 0), CUSTOM_MAX[key]) : 0;
+            rules[key] = clampRule(key, raw && raw[key]);
         });
-        if (!rules.seconds) rules.bonus = 0; // 持ち時間がなければ追加もない
+        if (!rules.seconds) { rules.bonus = 0; rules.penalty = 0; } // 持ち時間がなければ増減もない
+        rules.penaltyAfter = Math.max(0, Math.floor(Number(raw && raw.penaltyAfter) || 0));
         // 終わる条件が 1 つもないと終われないので、10 問で終わるようにする
         if (!rules.words && !rules.seconds && !rules.lives) rules.words = TRIAL_WORDS;
         return rules;
@@ -51,6 +61,7 @@
         if (rules.words) parts.push(`${rules.words} words`);
         if (rules.seconds) parts.push(`${rules.seconds}s`);
         if (rules.bonus) parts.push(`+${rules.bonus}s/word`);
+        if (rules.penalty) parts.push(`-${rules.penalty}s/miss`);
         if (rules.lives) parts.push(`${rules.lives} miss limit`);
         return parts.join(', ');
     }
@@ -110,11 +121,34 @@
     }
 
     // 言語横断を必ず使うモード（問題切れを防ぐため、全言語から出題する）
-    const MIX_ONLY_MODES = ['sudden-death'];
+    const MIX_ONLY_MODES = ['marathon'];
 
-    // 実際に出題に使う言語。言語横断が必須のモードでは、選んだ言語にかかわらず全言語になる
+    // 「選んだ複数の言語から出題する」ことを表す、言語の id
+    const PICK_ID = 'pick';
+
+    // 実際に出題に使う言語の id。言語横断が必須のモードでは、選んだ言語にかかわらず全言語になる
     function activeLang(sel = selection) {
         return MIX_ONLY_MODES.includes(sel.mode) ? Codtec.MIX_ID : sel.lang;
+    }
+
+    // PICK LANGS で選ばれている言語の id（登録されている言語だけ、メニューと同じ並び順）
+    function pickedIds(sel = selection) {
+        const picked = Array.isArray(sel.picked) ? sel.picked : [];
+        return Codtec.languages.map(l => l.id).filter(id => picked.includes(id));
+    }
+
+    // 実際に出題に使う言語（問題のまとまり）を返す
+    function activeLangData(sel = selection) {
+        const id = activeLang(sel);
+        if (id !== PICK_ID) return Codtec.get(id);
+        const ids = pickedIds(sel);
+        return Codtec.combine(PICK_ID, `${ids.length} LANGS`, ids);
+    }
+
+    // 記録を保存するときの言語の名前。PICK LANGS は言語の組み合わせごとに分ける
+    function recordLang(sel = selection) {
+        const id = activeLang(sel);
+        return id === PICK_ID ? `pick-${pickedIds(sel).join('+')}` : id;
     }
 
     const langName = id => Codtec.get(id).name;
@@ -158,24 +192,39 @@
         const chips = document.createElement('div');
         chips.className = 'group-chips';
         langs.forEach(l => {
-            chips.appendChild(makeChip(l.name, null, l.id === activeLang(), () => select({ lang: l.id })));
+            const picking = activeLang() === PICK_ID && Codtec.languages.includes(l);
+            const chip = makeChip(l.name, null, l.id === activeLang(), () => (picking ? togglePick(l.id) : select({ lang: l.id })));
+            if (picking && pickedIds().includes(l.id)) chip.classList.add('picked');
+            chips.appendChild(chip);
         });
         row.append(label, chips);
         return row;
     }
 
+    // PICK LANGS の間は、言語を押すたびに出題する言語へ入れたり外したりする（最後の 1 つは外せない）
+    function togglePick(id) {
+        const ids = pickedIds();
+        const next = ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
+        if (next.length === 0) {
+            menuMessage.textContent = '少なくとも 1 つの言語を選んでください';
+            return;
+        }
+        select({ picked: next });
+    }
+
     function renderMenu() {
-        const lang = Codtec.get(activeLang());
+        const lang = activeLangData();
         const mixForced = MIX_ONLY_MODES.includes(selection.mode);
+        const picking = activeLang() === PICK_ID;
 
         // 言語（先頭は、全言語から出題する言語横断）
         const langBox = $('lang-selector');
         langBox.textContent = '';
         langBox.classList.toggle('lang-locked', mixForced);
-        langBox.appendChild(makeLangRow('CROSS-LANGUAGE', [Codtec.get(Codtec.MIX_ID)]));
-        $('lang-note').textContent = mixForced
-            ? `${getMode(selection.mode).label} は、問題切れを防ぐために全言語から出題します`
-            : '';
+        langBox.appendChild(makeLangRow('CROSS-LANGUAGE', [Codtec.get(Codtec.MIX_ID), { id: PICK_ID, name: 'PICK LANGS' }]));
+        if (mixForced) $('lang-note').textContent = `${getMode(selection.mode).label} は、問題切れを防ぐために全言語から出題します`;
+        else if (picking) $('lang-note').textContent = `${pickedIds().length} 言語を選択中。言語を押すと、出題する言語に入れたり外したりできます`;
+        else $('lang-note').textContent = '';
         Codtec.GROUPS.forEach(group => {
             const members = Codtec.languages.filter(l => l.group === group.id);
             if (members.length === 0) return;
@@ -216,7 +265,7 @@
             $('custom-summary').textContent = `RULE: ${ruleSummary(normalizeRules(selection.custom))}`;
         }
 
-        const best = readBest({ ...selection, lang: activeLang() });
+        const best = readBest({ ...selection, lang: recordLang() });
         if (isCustom) $('best-display').textContent = 'BEST: N/A';
         else $('best-display').textContent = best === null ? 'BEST: ---' : `BEST: ${formatScore(mode, best)}`;
     }
@@ -225,8 +274,7 @@
     function onCustomInput() {
         const custom = {};
         Object.keys(CUSTOM_MAX).forEach(key => {
-            const n = Math.floor(Number($(`custom-${key}`).value));
-            custom[key] = Number.isFinite(n) ? Math.min(Math.max(n, 0), CUSTOM_MAX[key]) : 0;
+            custom[key] = clampRule(key, $(`custom-${key}`).value);
         });
         selection.custom = custom;
         store.set('codtec_selection', JSON.stringify(selection));
@@ -234,8 +282,15 @@
     }
 
     function select(change) {
+        // PICK LANGS をもう一度押したら、1 言語の選択に戻る
+        if (change.lang === PICK_ID && selection.lang === PICK_ID) change = { lang: pickedIds()[0] };
+        const prevLang = selection.lang;
         selection = { ...selection, ...change };
-        const lang = Codtec.get(activeLang());
+        // PICK LANGS に入ったとき、まだ何も選ばれていなければ直前の言語から始める
+        if (selection.lang === PICK_ID && pickedIds().length === 0) {
+            selection.picked = [Codtec.languages.some(l => l.id === prevLang) ? prevLang : Codtec.languages[0].id];
+        }
+        const lang = activeLangData();
         if (!availableCourses(lang).includes(selection.course)) selection.course = 'all';
         store.set('codtec_selection', JSON.stringify(selection));
         menuMessage.textContent = '';
@@ -276,17 +331,20 @@
     }
 
     function startGame() {
-        const pool = Codtec.getPool(activeLang(), selection.course);
+        const langData = activeLangData();
+        const pool = Codtec.getPool(langData, selection.course);
         if (pool.length === 0) return;
         if (document.activeElement) document.activeElement.blur();
 
         stopTimers();
         game = {
-            sel: { ...selection, lang: activeLang() }, // 記録と表示には、実際に出題した言語を使う
-            mixed: activeLang() === Codtec.MIX_ID,
+            sel: { ...selection, lang: recordLang() }, // 記録には、実際に出題した言語を使う
+            langData,
+            mixed: langData.id === Codtec.MIX_ID || langData.id === PICK_ID,
             mode: getMode(selection.mode),
             rules: normalizeRules(selection.mode === 'custom' ? selection.custom : getMode(selection.mode).rules),
             dead: false,     // ミスの上限で終わったか
+            penaltyCount: 0, // 持ち時間を減らす対象になったミスの回数
             pool,
             bag: [],
             target: null,
@@ -303,7 +361,7 @@
         pauseOverlay.hidden = true;
         noteDisplay.textContent = '';
         noteDisplay.className = '';
-        infoDisplay.textContent = `${Codtec.get(game.sel.lang).name} / ${courseLabel(game.sel.course)}`;
+        infoDisplay.textContent = `${game.langData.name} / ${courseLabel(game.sel.course)}`;
         show('game');
         runCountdown(3);
     }
@@ -385,7 +443,7 @@
 
     function updateProgress() {
         const { rules } = game;
-        const parts = [Codtec.get(game.sel.lang).name];
+        const parts = [game.langData.name];
         parts.push(rules.words
             ? `PROGRESS: ${Math.min(game.wordIdx + 1, rules.words)} / ${rules.words}`
             : `WORDS CLEARED: ${game.wordIdx}`);
@@ -393,9 +451,11 @@
         infoDisplay.textContent = parts.join(' | ');
     }
 
-    // いまの持ち時間（秒）。1 問クリアするごとに bonus 秒ずつ増える
+    // いまの持ち時間（秒）。1 問クリアするごとに bonus 秒ずつ増え、
+    // 1 回ミスするごとに penalty 秒ずつ減る
     function timeAllowed() {
-        return game.rules.seconds + game.rules.bonus * game.wordIdx;
+        const { seconds, bonus, penalty } = game.rules;
+        return seconds + bonus * game.wordIdx - penalty * game.penaltyCount;
     }
 
     function updateTimer() {
@@ -477,14 +537,25 @@
         void span.offsetWidth; // アニメーションをやり直すための再描画
         span.className = 'current miss';
         if (game.rules.lives && game.missCount >= game.rules.lives) showGameOver();
-        else updateProgress();
+        else {
+            if (game.rules.penalty && game.wordIdx >= game.rules.penaltyAfter) {
+                game.penaltyCount++;
+                flashTimer('penalty');
+            }
+            updateProgress();
+        }
     }
 
     // 持ち時間が増えたことを、タイマーの色で一瞬知らせる
     function flashBonus() {
-        timerDisplay.className = 'bonus';
+        flashTimer('bonus');
+    }
+
+    // 持ち時間が増えた（bonus）・減った（penalty）ことを、タイマーの色で一瞬知らせる
+    function flashTimer(kind) {
+        timerDisplay.className = kind;
         setTimeout(() => {
-            if (timerDisplay.className === 'bonus') timerDisplay.className = '';
+            if (timerDisplay.className === kind) timerDisplay.className = '';
         }, 400);
     }
 
@@ -547,8 +618,8 @@
             return;
         }
 
-        const lang = Codtec.get(activeLang());
-        const langIds = [Codtec.MIX_ID, ...Codtec.GROUPS.flatMap(g => Codtec.languages.filter(l => l.group === g.id).map(l => l.id))];
+        const lang = activeLangData();
+        const langIds = [Codtec.MIX_ID, PICK_ID, ...Codtec.GROUPS.flatMap(g => Codtec.languages.filter(l => l.group === g.id).map(l => l.id))];
 
         if (e.key === 'Enter') { e.preventDefault(); startGame(); }
         else if (e.key === 'ArrowRight') { e.preventDefault(); select({ lang: step(langIds, selection.lang, 1) }); }
@@ -617,8 +688,11 @@
         }
         const modeText = tracked ? g.mode.id : `custom (${ruleSummary(g.rules)})`;
 
-        const langName = Codtec.get(g.sel.lang).name;
-        const langText = g.sel.course === 'all' ? langName : `${langName} (${courseLabel(g.sel.course)})`;
+        // PICK LANGS のときは、選んだ言語の名前も並べる
+        const baseName = g.langData.id === PICK_ID
+            ? `${g.langData.name}: ${g.langData.members.map(langName).join(', ')}`
+            : g.langData.name;
+        const langText = g.sel.course === 'all' ? baseName : `${baseName} (${courseLabel(g.sel.course)})`;
 
         const shareText = `[CODTEC_REPORT]
 >> LANG: ${langText} / MODE: ${modeText}
@@ -751,9 +825,11 @@ ${SITE_URL}`;
             if (saved && typeof saved === 'object') selection = { ...selection, ...saved };
         } catch (e) { /* 壊れた保存データは無視する */ }
         selection.custom = { ...CUSTOM_DEFAULT, ...(selection.custom && typeof selection.custom === 'object' ? selection.custom : {}) };
-        if (!Codtec.get(selection.lang)) selection.lang = Codtec.languages[0].id;
+        if (selection.lang !== PICK_ID && !Codtec.get(selection.lang)) selection.lang = Codtec.languages[0].id;
+        selection.picked = pickedIds();
+        if (selection.lang === PICK_ID && selection.picked.length === 0) selection.lang = Codtec.languages[0].id;
         if (!getMode(selection.mode)) selection.mode = MODES[0].id;
-        if (!availableCourses(Codtec.get(activeLang())).includes(selection.course)) selection.course = 'all';
+        if (!availableCourses(activeLangData()).includes(selection.course)) selection.course = 'all';
 
         startBtn.disabled = false;
         goToMenu();
