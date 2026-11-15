@@ -3,43 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="エンジニア向けのターミナル風タイピングゲーム。24 言語・2900 問以上のコードで練習できます。">
     <title>Codtec | Programming Typing</title>
-    <link rel="stylesheet" href="codtec.css">
+    <!-- ?v= は古いキャッシュを避けるための印。data/registry.js の VERSION を上げたら、ここも同じ値にする -->
+    <link rel="stylesheet" href="codtec.css?v=2.0.0">
 </head>
 <body>
 
     <div id="game-container">
-        <div id="menu-screen">
-            <h1>> CODTEC_</h1>
+        <section id="menu-screen">
+            <a class="btn-ghost portal-link" href="https://ssmbar.com/">&larr; ポータルに戻る</a>
+            <a class="btn-ghost howto-link" href="howto.html">HOW TO PLAY</a>
+            <h1>&gt; CODTEC_</h1>
+            <p id="menu-message" class="menu-message" role="status"></p>
+
             <div class="selection-group">
-                <p class="label">01. SELECT LANGUAGE</p>
-                <div id="lang-selector">
-                    <button class="btn-gradient lang-btn active" data-lang="cpp"><span>C++</span></button>
-                    <button class="btn-gradient lang-btn" data-lang="java"><span>Java</span></button>
-                    <button class="btn-gradient lang-btn" data-lang="python"><span>Python</span></button>
-                    <button class="btn-gradient lang-btn" data-lang="js"><span>JavaScript</span></button>
-                </div>
+                <p class="label">01. SELECT LANGUAGE <span id="lang-count"></span></p>
+                <div id="lang-selector"></div>
             </div>
             <div class="selection-group">
-                <p class="label">02. SELECT MODE</p>
-                <div id="mode-selector">
-                    <button class="btn-gradient mode-btn" data-mode="time-trial"><span>10 WORDS TRIAL</span></button>
-                    <button class="btn-gradient mode-btn" data-mode="score-attack"><span>30s SCORE ATTACK</span></button>
-                </div>
+                <p class="label">02. SELECT COURSE</p>
+                <div id="course-selector" class="chip-row"></div>
+                <p id="course-desc" class="desc"></p>
             </div>
-            <button id="start-btn" class="btn-gradient" onclick="startGame()" disabled>
+            <div class="selection-group">
+                <p class="label">03. SELECT MODE</p>
+                <div id="mode-selector" class="chip-row"></div>
+                <p id="mode-desc" class="desc"></p>
+            </div>
+
+            <p id="best-display" class="best-display"></p>
+            <button id="start-btn" class="btn-gradient" type="button" disabled>
                 <span>[ MISSION START ]</span>
             </button>
-        </div>
+            <p class="key-hint">
+                <kbd>&larr;</kbd><kbd>&rarr;</kbd> 言語　<kbd>&uarr;</kbd><kbd>&darr;</kbd> コース　<kbd>1</kbd>-<kbd>4</kbd> モード　<kbd>Enter</kbd> 開始
+            </p>
+        </section>
 
-        <div id="game-screen" style="display: none;">
-            <div id="game-info">SYSTEM STATUS: RUNNING</div>
+        <section id="game-screen" hidden>
+            <div class="game-header">
+                <div id="game-info">SYSTEM STATUS: RUNNING</div>
+                <button id="pause-btn" class="btn-ghost" type="button">
+                    <span class="pause-icon" aria-hidden="true"></span>PAUSE <kbd>Esc</kbd>
+                </button>
+            </div>
+            <div id="course-tag" class="course-tag"></div>
             <div id="word-display"></div>
+            <div id="note-display"></div>
             <div id="timer-display">TIME: 0.00s</div>
-        </div>
+
+            <div id="pause-overlay" hidden>
+                <div class="pause-title">|| PAUSED</div>
+                <p class="pause-sub">タイマーは止まっています</p>
+                <div class="pause-actions">
+                    <button class="btn-ghost" type="button" data-action="resume">再開する <kbd>Esc</kbd></button>
+                    <button class="btn-ghost" type="button" data-action="restart">最初からやり直す <kbd>R</kbd></button>
+                    <button class="btn-ghost" type="button" data-action="quit">メニューへ戻る <kbd>Q</kbd></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="result-screen" hidden></section>
+
+        <footer id="app-footer">
+            <span id="version-label"></span>
+            <a href="https://github.com/ssmbc2929bartok/codtec/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">変更履歴</a>
+            <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </footer>
     </div>
 
-    <script src="languages.js"></script>
-    <script src="script.js"></script>
+    <script src="data/registry.js?v=2.0.0"></script>
+    <script src="data/manifest.js?v=2.0.0"></script>
+    <script src="script.js?v=2.0.0"></script>
 </body>
 </html>

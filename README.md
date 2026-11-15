@@ -1,50 +1,106 @@
-Terminal-Style Typing Game
-プログラマーやエンジニアのために設計された、ターミナル風のWebタイピングゲームです。C++などの予約語やコマンドを、エンジニアお馴染みのショートカットで操作しながら練習できます。
+# Codtec
 
-🚀 Live Demo
+Terminal-Style Typing Game
+
+プログラマーやエンジニアのために設計された、ターミナル風の Web タイピングゲームです。実際のコードやコマンドを打って練習できます。
+
+現在のバージョンは v2.0.0 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
+
+## 🚀 Live Demo
+
 https://ssmbar.com/codtec/
 
-✨ 特徴
-エンジニア特化の単語リスト: C++などのプログラミング言語から厳選されたワードが出題されます。
+## ✨ 特徴
 
-2つのゲームモード:
+### 24 言語・2900 問以上
 
-Time Trial: 10問をどれだけ速く打ち切れるか。
+どの言語にも 100 問以上あり、すべての問題に短い解説が付いています。
 
-Score Attack: 30秒間で何文字打てるか。
+| 分類 | 言語 |
+|---|---|
+| SYSTEMS | C / C++ / Rust / Go |
+| APP / JVM | Java / Kotlin / Swift / C# / Dart |
+| SCRIPT | Python / Ruby / PHP / Lua |
+| WEB | JavaScript / TypeScript / HTML / CSS |
+| DATA / FUNCTIONAL | SQL / R / Haskell / Elixir |
+| TOOLS / INFRA | Shell / Linux / Git / Docker |
 
-こだわりの操作感:
+### 5 つのコース
 
-Mission Start: 開始前の3カウントで集中力を高めます。
+言語ごとに、出題する範囲を選べます。コースごとに文字の色が変わります。
 
-SIGINT (Ctrl+C) 中断: プレイ中、いつでもターミナルと同じ感覚で強制終了（メニューへ戻る）が可能です。
+| コース | 色 | 内容 |
+|---|---|---|
+| BASICS | 緑 | 基礎の構文 |
+| STDLIB | 黄 | 標準ライブラリ・データ構造・組み込みの機能（C++ なら stack や priority_queue のメソッドなど） |
+| IDIOMS | 青 | その言語らしい書き方 |
+| ADVANCED | 紫 | 応用・上級者向け |
+| LIBS | 橙 | ライブラリ・各界隈の定番（競技プログラミング、Web、機械学習、ゲーム開発、組み込みなど） |
+| ALL | | 全コースからまとめて出題 |
 
-詳細なリザルト:
+### 4 つのゲームモード
 
-KPM (Keys Per Minute) の算出
+| モード | 内容 |
+|---|---|
+| 10 WORDS TRIAL | 10 問をどれだけ速く打ち切れるか |
+| 30s SCORE ATTACK | 30 秒間で何問打てるか |
+| 60s SCORE ATTACK | 60 秒間で何問打てるか |
+| SUDDEN DEATH | 1 回でもミスしたら終了。何問続けられるか |
 
-ミス回数と正確性（Accuracy）の表示
+### そのほか
 
-🛠 操作方法
-1 / 2: モード選択
+- 開始前の 3 カウント
+- プレイ中の一時停止（タイマーが止まり、問題文は隠れます）
+- KPM（Keys Per Minute）、ミス回数、正確性（Accuracy）の表示
+- 結果画面での振り返り（プレイした問題のコース、ミス回数、解説）
+- 言語・コース・モードごとの自己ベストの保存
+- 結果を X でシェア
 
-Enter: ゲーム開始 / リトライ
+## 🛠 操作方法
 
-Ctrl + C: ゲームの中断 (Mission Abort)
+ゲーム内の HOW TO PLAY（メニューの右上）にも、同じ内容と入力の決まりを載せています。
 
-Escape: メニューへ戻る（確認あり）
+| 場面 | キー | 動作 |
+|---|---|---|
+| メニュー | `←` `→` | 言語を選ぶ |
+| メニュー | `↑` `↓` | コースを選ぶ |
+| メニュー | `1` `2` `3` `4` | モードを選ぶ |
+| メニュー | `Enter` | ゲーム開始 |
+| プレイ中 | `Esc` | 一時停止 |
+| 一時停止中 | `Esc` / `Enter` | 再開 |
+| 一時停止中 | `R` | 最初からやり直す |
+| 一時停止中 | `Q` | メニューへ戻る |
+| プレイ中・一時停止中 | `Ctrl + C` | すぐに中断してメニューへ戻る（Mission Abort） |
+| 結果画面 | `Enter` | もう一度 |
+| 結果画面 | `Esc` | メニューへ戻る |
 
-🛠 技術スタック
-Frontend: HTML5, CSS3, JavaScript (Vanilla JS)
+## 📝 問題を足す
 
-Engine: AI-Assisted Development
+問題は 1 言語 1 ファイル、1 行 1 問で書いてあります。足し方は [data/README.md](data/README.md) を見てください。
 
-📂 今後のアップデート予定
-[ ] Firebaseによるグローバルランキングの実装
+```bash
+node tools/validate.mjs
+```
 
-[ ] 対応言語の追加 (Rust, Python, Linux Commands, etc.)
+で、問題データに誤りがないか確かめられます。
 
-[ ] ダークモード / エディタテーマの変更機能
+## 🛠 技術スタック
 
-📄 ライセンス
-このプロジェクトは CC0 (Creative Commons Zero) の下で公開されています。 AIとの共作により生まれたコードであり、誰でも自由に使用、改変、再配布が可能です。
+- Frontend: HTML5, CSS3, JavaScript (Vanilla JS)。ビルドは不要です。
+- Engine: AI-Assisted Development
+
+手元で動かすには、このフォルダで次を実行して http://localhost:8765 を開きます。
+
+```bash
+python3 -m http.server 8765
+```
+
+## 📂 今後のアップデート予定
+
+- [x] 対応言語の追加
+- [ ] Firebase によるグローバルランキングの実装
+- [ ] ダークモード / エディタテーマの変更機能
+
+## 📄 ライセンス
+
+このプロジェクトは CC0 (Creative Commons Zero) の下で公開されています。AI との共作により生まれたコードであり、誰でも自由に使用、改変、再配布が可能です。
