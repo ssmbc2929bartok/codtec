@@ -8,7 +8,7 @@ Terminal-Style Typing Game
 
 ## 🚀 Live Demo
 
-https://ssmbar.com/codtec/
+https://ssmbc2929bartok.github.io/codtec/
 
 ## ✨ 特徴
 
@@ -102,13 +102,9 @@ python3 -m http.server 8765
 
 ## 🚚 公開のしかた
 
-https://ssmbar.com/codtec/ は、このリポジトリの `codtec/` フォルダの中身を配信しています。ルートのファイルを直したら、コミットの前に次を実行して `codtec/` を作り直します。
+main ブランチにプッシュすると、GitHub Pages が https://ssmbc2929bartok.github.io/codtec/ に公開します。
 
-```bash
-node tools/sync-public.mjs
-```
-
-`codtec/` の中は直接編集しません。ずれがないかだけ調べるには `node tools/sync-public.mjs --check` を使います。
+以前の公開先 https://ssmbar.com/codtec/ は、`codtec/index.html` の転送ページから新しい公開先へ移動します。`codtec/` フォルダにはこの 1 ページだけを置いています。
 
 ## 📂 今後のアップデート予定
 

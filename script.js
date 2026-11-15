@@ -7,7 +7,7 @@
     const COUNTDOWN_STEP_MS = 800;
     const GAME_OVER_MS = 1400; // ミスの上限で終わったあと、TERMINATED を見せておく時間
 
-    const SITE_URL = 'https://ssmbar.com/codtec/';
+    const SITE_URL = 'https://ssmbc2929bartok.github.io/codtec/';
     const PORTAL_URL = 'https://ssmbar.com/';
     const FEEDBACK_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfiswxbXdiDrfv-ioF_M2Tyt3Vjkeo6WETMfemG2dpUdL4AQA/viewform';
 
