@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "codtec", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8765"], "port": 8765 }
+    { "name": "codtec", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8765"], "port": 8765 },
+    { "name": "codtec-win", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8770"], "port": 8770 }
   ]
 }

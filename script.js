@@ -803,8 +803,10 @@
 >> ERR_LOG: ${errLog}
 >> EXIT: ${exitText}
 
+#codtec
 ${SITE_URL}`;
-        const xLink = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&hashtags=codtec`;
+        // ハッシュタグは文面に書く。hashtags= で渡すと URL のうしろに付いてしまう
+        const xLink = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
 
         resultScreen.innerHTML = `
             <div class="result-title">${g.dead ? 'MISSION FAILED' : 'MISSION COMPLETE'}</div>
