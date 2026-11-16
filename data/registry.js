@@ -4,7 +4,7 @@
 (function (global) {
     'use strict';
 
-    const VERSION = '2.4.2';
+    const VERSION = '2.5.0';
 
     // 1 問の長さの上限（これを超える行は読み込み時に除外して警告する）
     const MAX_LENGTH = 56;
@@ -149,13 +149,13 @@
 
     // コースを指定して問題の配列を取り出す（'all' なら全コース）
     // lang には言語の id か、get() や combine() が返した言語を渡す
+    // courseId には 1 つのコースの id か、複数を「+」でつないだもの（'basics+stdlib'）を渡す
     function getPool(langOrId, courseId) {
         const lang = typeof langOrId === 'string' ? get(langOrId) : langOrId;
         if (!lang) return [];
-        if (courseId && courseId !== 'all' && lang.sets[courseId]) {
-            return lang.sets[courseId].slice();
-        }
-        return COURSES.flatMap(c => lang.sets[c.id] || []);
+        const ids = courseId && courseId !== 'all' ? courseId.split('+').filter(id => lang.sets[id]) : [];
+        const picked = ids.length > 0 ? COURSES.filter(c => ids.includes(c.id)) : COURSES;
+        return picked.flatMap(c => lang.sets[c.id] || []);
     }
 
     global.Codtec = {
