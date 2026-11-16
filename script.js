@@ -257,11 +257,24 @@
         select({ picked: next });
     }
 
-    // コースを押すたびに、出題するコースへ入れたり外したりする。全部外すか全部選ぶと ALL になる
+    // PICK COURSES の間は、コースを押すたびに出題するコースへ入れたり外したりする（最後の 1 つは外せない）
+    // 全部選ぶと ALL になり、PICK COURSES は終わる
     function toggleCourse(id) {
         const ids = courseIds(selection.course);
         const next = ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
-        select({ course: next.join('+') || 'all' });
+        if (next.length === 0) {
+            menuMessage.textContent = '少なくとも 1 つのコースを選んでください';
+            return;
+        }
+        select({ course: next.join('+') });
+    }
+
+    // PICK COURSES を押すと複数選択に入る。もう一度押すと、1 コースの選択に戻る
+    function toggleCoursePick() {
+        const ids = courseIds(selection.course);
+        if (selection.coursePick) select({ coursePick: false, course: ids[0] || 'all' });
+        // ALL から入ったときは、先頭のコースから始める
+        else select({ coursePick: true, course: ids[0] || availableCourses(activeLangData())[1] || 'all' });
     }
 
     function renderMenu() {
@@ -290,15 +303,18 @@
         courseBox.textContent = '';
         courseBox.classList.toggle('lang-locked', mixForced);
         const chosen = courseIds(activeCourse());
+        const pickingCourse = !mixForced && selection.coursePick;
         availableCourses(lang).forEach(id => {
             const count = id === 'all' ? lang.total : lang.sets[id].length;
             const active = id === 'all' ? chosen.length === 0 : chosen.includes(id);
-            const onClick = id === 'all' ? () => select({ course: 'all' }) : () => toggleCourse(id);
+            const onClick = id !== 'all' && selection.coursePick ? () => toggleCourse(id) : () => select({ course: id });
             courseBox.appendChild(makeChip(courseLabel(id), count, active, onClick, id === 'all' ? null : id));
+            // ALL の次に、複数選択に入るための PICK COURSES を置く
+            if (id === 'all') courseBox.appendChild(makeChip('PICK COURSES', null, pickingCourse, toggleCoursePick));
         });
-        if (chosen.length === 0) $('course-desc').textContent = 'すべてのコースからまとめて出題';
-        else if (chosen.length === 1) $('course-desc').textContent = Codtec.COURSES.find(c => c.id === chosen[0]).desc;
-        else $('course-desc').textContent = `${chosen.length} コースを選択中（${Codtec.getPool(lang, activeCourse()).length} 問）。選んだコースからまとめて出題`;
+        if (pickingCourse) $('course-desc').textContent = `${chosen.length} コースを選択中（${Codtec.getPool(lang, activeCourse()).length} 問）。コースを押すと、出題するコースに入れたり外したりできます`;
+        else if (chosen.length === 0) $('course-desc').textContent = 'すべてのコースからまとめて出題';
+        else $('course-desc').textContent = Codtec.COURSES.find(c => c.id === chosen[0]).desc;
 
         // モード
         const modeBox = $('mode-selector');
@@ -347,10 +363,17 @@
         if (selection.lang === PICK_ID && pickedIds().length === 0) {
             selection.picked = [Codtec.languages.some(l => l.id === prevLang) ? prevLang : Codtec.languages[0].id];
         }
-        selection.course = normalizeCourse(activeLangData(), selection.course);
+        fixCourse();
         store.set('codtec_selection', JSON.stringify(selection));
         menuMessage.textContent = '';
         renderMenu();
+    }
+
+    // コースの選択を、いまの言語に合うように直す。PICK COURSES は、ALL になったら終わり、複数選ばれていれば入る
+    function fixCourse() {
+        selection.course = normalizeCourse(activeLangData(), selection.course);
+        const count = courseIds(selection.course).length;
+        selection.coursePick = count > 1 || (count === 1 && selection.coursePick === true);
     }
 
     function step(list, current, delta) {
@@ -730,15 +753,15 @@
         }
 
         const lang = activeLangData();
-        // 矢印キーはコースを 1 つずつ切り替える。複数選んでいるときは、先頭のコースから数える
+        // 矢印キーはコースを 1 つずつ切り替える。PICK COURSES の間に押すと、先頭のコースから数えて 1 コースの選択に戻る
         const courseCursor = courseIds(selection.course)[0] || 'all';
         const langIds = [Codtec.MIX_ID, PICK_ID, ...Codtec.GROUPS.flatMap(g => Codtec.languages.filter(l => l.group === g.id).map(l => l.id))];
 
         if (e.key === 'Enter') { e.preventDefault(); startGame(); }
         else if (e.key === 'ArrowRight') { e.preventDefault(); select({ lang: step(langIds, selection.lang, 1) }); }
         else if (e.key === 'ArrowLeft') { e.preventDefault(); select({ lang: step(langIds, selection.lang, -1) }); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); select({ course: step(availableCourses(lang), courseCursor, 1) }); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); select({ course: step(availableCourses(lang), courseCursor, -1) }); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); select({ coursePick: false, course: step(availableCourses(lang), courseCursor, 1) }); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); select({ coursePick: false, course: step(availableCourses(lang), courseCursor, -1) }); }
         else if (/^[1-9]$/.test(e.key) && MODES[Number(e.key) - 1]) select({ mode: MODES[Number(e.key) - 1].id });
     }
 
@@ -958,7 +981,7 @@ ${SITE_URL}`;
         selection.picked = pickedIds();
         if (selection.lang === PICK_ID && selection.picked.length === 0) selection.lang = Codtec.languages[0].id;
         if (!getMode(selection.mode)) selection.mode = MODES[0].id;
-        selection.course = normalizeCourse(activeLangData(), selection.course);
+        fixCourse();
 
         startBtn.disabled = false;
         goToMenu();
