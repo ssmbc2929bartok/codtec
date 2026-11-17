@@ -20,12 +20,23 @@
     //   words   : この問題数を打ち切ったら終了
     //   seconds : 持ち時間（秒）。なくなったら終了
     //   bonus   : 1 問クリアするごとに持ち時間へ足す秒数
+    //   bonusCurve : クリアした問題数に応じて、足す秒数を変える表（wordBonus を参照）
     //   penalty : 1 回ミスするごとに持ち時間から引く秒数（0.1 秒きざみ）
     //   penaltyCurve : クリアした問題数に応じて、1 回のミスで引く秒数を変える表（missPenalty を参照）
     //   lives   : ミスがこの回数に達したら終了
     // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
     // milestone を付けたモードでは、その問題数をクリアするごとに短い知らせを出す。
     // short は、メニューのボタンと X のシェア文面に書く短い名前。color はメニューの枠線と結果のスコアに使う色。
+    // MARATHON で 1 問クリアするごとに増える時間。クリアした問題数が from 以上になったら、次の 1 問から add 秒になる
+    //   49 問まで: +10 秒 → 50 問から: +7 秒 → 100 問から: +5 秒 → 200 問から: +3 秒 → 500 問から: +1 秒
+    const MARATHON_BONUS = [
+        { from: 0, add: 10 },
+        { from: 50, add: 7 },
+        { from: 100, add: 5 },
+        { from: 200, add: 3 },
+        { from: 500, add: 1 },
+    ];
+
     // MARATHON のミスのペナルティ。start 問クリアしたら base 秒になり、
     // そのあとは every 問クリアするごとに増える（増える量は、何問目までかで steps から選ぶ）。
     //   10 問: 0.1 秒 → 20〜50 問: +0.1 秒ずつ → 60〜100 問: +0.2 秒ずつ → 110 問以降: +0.3 秒ずつ
@@ -47,7 +58,7 @@
         { id: 'score-attack', label: '30s SCORE ATTACK', short: '30s ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
         { id: 'score-attack-60', label: '60s SCORE ATTACK', short: '60s ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
         { id: 'score-attack-120', label: '120s SCORE ATTACK', short: '120s ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
-        { id: 'marathon', label: 'MARATHON', short: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる', rules: { seconds: 30, bonus: 10, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
+        { id: 'marathon', label: 'MARATHON', short: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに時間が増えるが、進むほど増える量は減り、ミスで減る量は増える', rules: { seconds: 30, bonus: 10, bonusCurve: MARATHON_BONUS, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
         { id: 'sudden-death', label: 'SUDDEN DEATH', short: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
         { id: 'custom', label: 'CUSTOM', short: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
@@ -72,6 +83,7 @@
         });
         if (!rules.seconds) { rules.bonus = 0; rules.penalty = 0; } // 持ち時間がなければ増減もない
         rules.penaltyCurve = (raw && raw.penaltyCurve) || null;
+        rules.bonusCurve = (raw && raw.bonusCurve) || null;
         // 終わる条件が 1 つもないと終われないので、10 問で終わるようにする
         if (!rules.words && !rules.seconds && !rules.lives) rules.words = TRIAL_WORDS;
         return rules;
@@ -401,6 +413,7 @@
 
     function goToMenu(message) {
         stopTimers();
+        bgFx.stop();
         game = null;
         phase = 'menu';
         pauseOverlay.hidden = true;
@@ -411,6 +424,10 @@
     }
 
     // --- ゲームの進行 ---
+
+    // 問題数が進むにつれて背景が変化するモード（背景が PLAIN のときは変化しない）
+    const WARP_MODES = ['marathon', 'sudden-death'];
+    const bgFx = window.CodtecBg || { start() {}, setLevel() {}, pause() {}, resume() {}, stop() {} };
 
     function stopTimers() {
         clearInterval(timerInterval);
@@ -435,6 +452,7 @@
         if (document.activeElement) document.activeElement.blur();
 
         stopTimers();
+        bgFx.stop();
         game = {
             sel: { ...selection, lang: recordLang(), course: activeCourse() }, // 記録には、実際に出題した言語とコースを使う
             langData,
@@ -443,6 +461,7 @@
             rules: normalizeRules(selection.mode === 'custom' ? selection.custom : getMode(selection.mode).rules),
             dead: false,     // ミスの上限で終わったか
             penaltyTotal: 0, // ミスで減った持ち時間の合計（秒）
+            bonusTotal: 0,   // クリアして増えた持ち時間の合計（秒）
             editor: selection.input === 'editor',
             pairs: {},       // いまの問題の、開きの位置 → 閉じの位置
             autoFilled: new Set(),
@@ -488,6 +507,7 @@
     function beginPlay() {
         phase = 'playing';
         wordDisplay.className = '';
+        if (WARP_MODES.includes(game.mode.id)) bgFx.start();
         setNextWord();
         game.segmentStart = performance.now();
         timerInterval = setInterval(updateTimer, 30);
@@ -565,8 +585,14 @@
     // いまの持ち時間（秒）。1 問クリアするごとに bonus 秒ずつ増え、
     // ミスするたびに missPenalty() 秒ずつ減る
     function timeAllowed() {
-        const { seconds, bonus } = game.rules;
-        return seconds + bonus * game.wordIdx - game.penaltyTotal;
+        return game.rules.seconds + game.bonusTotal - game.penaltyTotal;
+    }
+
+    // cleared 問クリアした状態で、次の 1 問をクリアしたときに増える秒数
+    function wordBonus(cleared = game.wordIdx) {
+        const { bonus, bonusCurve } = game.rules;
+        if (!bonusCurve) return bonus;
+        return bonusCurve.reduce((add, step) => (cleared >= step.from ? step.add : add), bonus);
     }
 
     // いま 1 回ミスしたときに減る秒数。penaltyCurve があれば、クリアした問題数に応じて増える
@@ -585,22 +611,32 @@
     function showMilestone() {
         const every = game.mode.milestone;
         if (!every || game.wordIdx === 0 || game.wordIdx % every !== 0) return;
-        // この区切りでペナルティが重くなったら、その値も知らせる
+        // この区切りで、増える時間やミスのペナルティが変わったら、その値も知らせる
+        const parts = [`${game.wordIdx} WORDS`];
+        const bonusChanged = wordBonus() !== wordBonus(game.wordIdx - 1);
         const penaltyUp = missPenalty() > missPenalty(game.wordIdx - 1);
+        if (bonusChanged) parts.push(`BONUS +${wordBonus(game.wordIdx - 1)}s -> +${wordBonus()}s`);
+        if (penaltyUp) parts.push(`MISS PENALTY -${missPenalty().toFixed(1)}s`);
         showToast(
-            penaltyUp ? `${game.wordIdx} WORDS  |  MISS PENALTY -${missPenalty().toFixed(1)}s` : `${game.wordIdx} WORDS CLEARED`,
-            penaltyUp ? 'warn' : ''
+            parts.length > 1 ? parts.join('  |  ') : `${game.wordIdx} WORDS CLEARED`,
+            bonusChanged || penaltyUp ? 'warn' : ''
         );
     }
+
+    let toastTimer = null;
 
     function showToast(text, kind) {
         toast.textContent = text;
         toast.className = 'toast';
         void toast.offsetWidth; // アニメーションをやり直すための再描画
         toast.className = `toast show ${kind}`;
+        // アニメーションを出さない設定でも消えるよう、時間でも片づける
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(hideToast, 2700);
     }
 
     function hideToast() {
+        clearTimeout(toastTimer);
         toast.className = 'toast';
         toast.textContent = '';
     }
@@ -626,11 +662,13 @@
         timerInterval = null;
         updateTimer();
         pauseOverlay.hidden = false; // 問題文はオーバーレイで隠れる
+        bgFx.pause();
         gameScreen.classList.add('paused');
     }
 
     function resumeGame() {
         if (phase !== 'paused') return;
+        bgFx.resume();
         pauseOverlay.hidden = true;
         gameScreen.classList.remove('paused');
         phase = 'playing';
@@ -685,8 +723,11 @@
                 return;
             }
             game.history.push({ item: game.target, misses: game.wordMiss, done: true });
+            const gained = wordBonus();
+            game.bonusTotal += gained;
             game.wordIdx++;
-            if (game.rules.bonus) flashBonus();
+            bgFx.setLevel(game.wordIdx);
+            if (gained > 0) flashBonus();
             showMilestone();
             if (game.rules.words && game.wordIdx >= game.rules.words) showEnding('finish');
             else setNextWord();
@@ -843,6 +884,7 @@
         if (g.rules.seconds) finalTime = Math.min(finalTime, timeAllowed());
         phase = 'result';
         stopTimers();
+        bgFx.pause(); // 結果画面では、最後の見た目のまま動きを止める
 
         // 打ちかけで終わった問題も振り返りに入れる
         const unfinished = g.target && g.charIdx < g.target.text.length && (g.charIdx > 0 || g.wordMiss > 0);

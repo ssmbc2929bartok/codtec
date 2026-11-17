@@ -4,7 +4,7 @@ Terminal-Style Typing Game
 
 プログラマーやエンジニアのために設計された、ターミナル風の Web タイピングゲームです。実際のコードやコマンドを打って練習できます。
 
-現在のバージョンは v2.6.0 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
+現在のバージョンは v2.7.0 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
 
 ## 🚀 Live Demo
 
@@ -49,7 +49,7 @@ https://ssmbc2929bartok.github.io/codtec/
 | 30s SCORE ATTACK | 30 秒間で何問打てるか |
 | 60s SCORE ATTACK | 60 秒間で何問打てるか |
 | 120s SCORE ATTACK | 120 秒間で何問打てるか |
-| MARATHON | 持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる（最大 5 秒）。何問続けられるか。全言語・全コースから出題 |
+| MARATHON | 持ち時間 30 秒で開始。1 問クリアするごとに時間が増える（はじめは 10 秒。50 問から 7 秒、100 問から 5 秒、200 問から 3 秒、500 問から 1 秒）。10 問目から、ミスすると時間が減り、10 問ごとに重くなる（最大 5 秒）。何問続けられるか。全言語・全コースから出題 |
 | SUDDEN DEATH | 1 回でもミスしたら終了。何問続けられるか |
 | CUSTOM | 問題数・持ち時間・1 問ごとの追加時間・1 ミスごとの減少時間・ミスの上限を自分で決めて遊ぶ。記録は保存されない |
 
@@ -68,7 +68,7 @@ https://ssmbc2929bartok.github.io/codtec/
 - KPM（Keys Per Minute）、ミス回数、正確性（Accuracy）の表示
 - 結果画面での振り返り（プレイした問題のコース、ミス回数、解説）
 - 言語・コース・モードごとの自己ベストの保存
-- 選べる背景（PLAIN / GRID / CIRCUIT / CRT）
+- 選べる背景（PLAIN / GRID / CIRCUIT / CRT）。MARATHON と SUDDEN DEATH では、進むにつれて模様が流れ、色や細かさが変わっていく
 - 結果を X でシェア
 
 ## 🛠 操作方法
@@ -118,7 +118,7 @@ main ブランチにプッシュすると、GitHub Pages が https://ssmbc2929ba
 公開する変更をコミットする前に、新しいバージョン番号で次を実行します。画面のバージョン表記と、CSS や JS を読み込む URL の印（`?v=`）がまとめて書き換わります。
 
 ```bash
-node tools/release.mjs 2.6.1
+node tools/release.mjs 2.7.1
 ```
 
 この印が前と同じままだと、ブラウザが古い CSS や JS を使い続けて、更新が反映されないことがあります。

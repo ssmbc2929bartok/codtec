@@ -236,30 +236,44 @@ kbd {
 }
 #course-tag { display: block; margin-bottom: 6px; font-size: 1rem; }
 
-/* 区切りの知らせ（ヘッダーの中央に重ねて出すので、ほかの要素は動かない） */
+/* 区切りの知らせ。枠の上の縁にまたがる位置に出すので、ほかの表示とは重ならない */
 .toast {
     position: absolute;
-    top: 4px;
+    top: -42px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 5px 14px;
-    border: 1px solid var(--accent-cyan);
+    padding: 8px 20px;
+    border: 2px solid var(--accent-cyan);
     border-radius: 9999px;
-    background: rgba(13, 17, 23, 0.9);
+    background: #0d1117;
     color: var(--accent-cyan);
-    font-size: 0.8rem;
+    font-size: 1.05rem;
+    font-weight: bold;
     letter-spacing: 1px;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
+    z-index: 2;
 }
-.toast.show { animation: toast 1.8s ease-out forwards; }
-.toast.warn { border-color: var(--error-red); color: #ff8a8a; }
+.toast.show { animation: toast 2.6s ease-out forwards, toast-glow 0.5s ease-in-out 0.3s 3; }
+.toast.warn { border-color: var(--error-red); color: #ff9a9a; }
+.toast.warn.show { animation: toast 2.6s ease-out forwards, toast-glow-warn 0.5s ease-in-out 0.3s 3; }
+/* 小さく現れて一度大きく弾み、しばらく光ってから、上へ消える */
 @keyframes toast {
-    0% { opacity: 0; transform: translate(-50%, -6px); }
-    12% { opacity: 1; transform: translate(-50%, 0); }
-    75% { opacity: 1; }
-    100% { opacity: 0; }
+    0% { opacity: 0; transform: translate(-50%, 14px) scale(0.6); }
+    10% { opacity: 1; transform: translate(-50%, 0) scale(1.14); }
+    18% { transform: translate(-50%, 0) scale(1); }
+    82% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -12px) scale(0.96); }
+}
+@keyframes toast-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(0, 255, 204, 0); }
+    50% { box-shadow: 0 0 22px rgba(0, 255, 204, 0.75); }
+}
+@keyframes toast-glow-warn {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 68, 68, 0); }
+    50% { box-shadow: 0 0 22px rgba(255, 68, 68, 0.8); }
+}
 }
 #game-info { font-size: 1rem; color: var(--accent-blue); text-align: left; }
 .pause-icon {
@@ -438,34 +452,55 @@ kbd {
 .howto-back .btn-gradient { text-decoration: none; }
 
 /* --- 背景（theme.js が body の data-bg を切り替える） --- */
-body { background-attachment: fixed; }
+/* 模様は .bg-layer に描く。MARATHON と SUDDEN DEATH では、theme.js が下の変数を少しずつ変えて、
+   模様を流したり、色や細かさを変えたりする。
+     --ox / --oy : 模様をずらす量   --scale : 模様の細かさ   --hue : 色相の回転   --glow : 明るさ */
+.bg-layer, .bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+.bg-layer {
+    --ox: 0px;
+    --oy: 0px;
+    --scale: 1;
+    --hue: 0deg;
+    --glow: 1;
+    filter: hue-rotate(var(--hue)) brightness(var(--glow));
+}
 
 /* GRID: サイバー調の方眼 */
-body[data-bg="grid"] {
+body[data-bg="grid"] .bg-layer {
     background-image:
         radial-gradient(ellipse at 50% -10%, rgba(88, 166, 255, 0.22), transparent 60%),
         radial-gradient(ellipse at 50% 110%, rgba(147, 125, 247, 0.18), transparent 55%),
         linear-gradient(rgba(88, 166, 255, 0.11) 1px, transparent 1px),
         linear-gradient(90deg, rgba(88, 166, 255, 0.11) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    background-size: 100% 100%, 100% 100%, calc(44px * var(--scale)) calc(44px * var(--scale)), calc(44px * var(--scale)) calc(44px * var(--scale));
+    background-position: 0 0, 0 0, var(--ox) var(--oy), var(--ox) var(--oy);
 }
 
 /* CIRCUIT: 基板調の配線とランド */
-body[data-bg="circuit"] {
-    background-color: #06120e;
+body[data-bg="circuit"] { background-color: #06120e; }
+body[data-bg="circuit"] .bg-layer {
     background-image:
         radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(3, 8, 6, 0.85) 100%),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2324a36b' stroke-opacity='.5' stroke-width='1.5'%3E%3Cpath d='M0 50h60l20 20h50l20-20h50'/%3E%3Cpath d='M50 0v30l20 20v60l-20 20v70'/%3E%3Cpath d='M0 150h40l20 20h60l20-20h60'/%3E%3Cpath d='M150 0v50M150 80v40l-20 20v60'/%3E%3Cpath d='M100 0v20l20 20M100 200v-20l-20-20v-40'/%3E%3Cpath d='M0 100h20M180 100h20'/%3E%3C/g%3E%3Cg fill='%2339ff14' fill-opacity='.55'%3E%3Ccircle cx='60' cy='50' r='3.5'/%3E%3Ccircle cx='150' cy='50' r='3.5'/%3E%3Ccircle cx='150' cy='80' r='3.5'/%3E%3Ccircle cx='50' cy='130' r='3.5'/%3E%3Ccircle cx='120' cy='40' r='3.5'/%3E%3Ccircle cx='80' cy='120' r='3.5'/%3E%3Ccircle cx='20' cy='100' r='3.5'/%3E%3Ccircle cx='180' cy='100' r='3.5'/%3E%3Ccircle cx='40' cy='150' r='3.5'/%3E%3C/g%3E%3Cg fill='none' stroke='%2324a36b' stroke-opacity='.45'%3E%3Crect x='92' y='84' width='36' height='24' rx='2'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 100% 100%, 200px 200px;
+    background-size: 100% 100%, calc(200px * var(--scale)) calc(200px * var(--scale));
+    background-position: 0 0, var(--ox) var(--oy);
 }
 
 /* CRT: ブラウン管の走査線 */
-body[data-bg="crt"] {
-    background-color: #050a08;
+body[data-bg="crt"] { background-color: #050a08; }
+body[data-bg="crt"] .bg-layer {
     background-image:
         radial-gradient(ellipse at 50% 50%, rgba(0, 255, 204, 0.10), transparent 70%),
         repeating-linear-gradient(0deg, rgba(0, 255, 204, 0.07) 0, rgba(0, 255, 204, 0.07) 1px, transparent 1px, transparent 4px);
-    background-size: 100% 100%, 100% 4px;
+    background-size: 100% 100%, 100% calc(4px * var(--scale));
+    background-position: 0 0, 0 var(--oy);
 }
 
 .bg-btn {
@@ -509,4 +544,5 @@ body[data-bg="crt"] {
 
 @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
+    .toast.show { opacity: 1; } /* 動きを出さない設定でも、知らせは見えるようにする */
 }

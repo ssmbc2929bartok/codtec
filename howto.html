@@ -21,9 +21,10 @@
     <meta name="twitter:image" content="https://ssmbc2929bartok.github.io/codtec/ogp.png">
     <meta name="twitter:image:alt" content="紺色の背景に、青い文字で「&gt; CODTEC_」と書かれた Codtec のロゴ">
     <!-- ?v= は node tools/release.mjs <番号> で index.html と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.6.0">
+    <link rel="stylesheet" href="codtec.css?v=2.7.0">
 </head>
 <body class="doc-page">
+    <div class="bg-layer" aria-hidden="true"></div>
 
     <div id="game-container">
         <a class="btn-ghost portal-link" href="./">&larr; ゲームに戻る</a>
@@ -77,12 +78,22 @@
                     <tr><td>30s SCORE ATTACK</td><td>30 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>60s SCORE ATTACK</td><td>60 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>120s SCORE ATTACK</td><td>120 秒間で何問打てるかを競います。</td><td>打ち切った問題数</td></tr>
-                    <tr><td>MARATHON</td><td>持ち時間 30 秒で始まり、1 問クリアするごとに 10 秒増えます。10 問クリアしたあとは、ミスするたびに持ち時間が減ります。減る時間は 10 問クリアするごとに増え、下の表のとおりです。10 問クリアするごとに短い知らせが出て、そのときの 1 回のミスで減る時間も出ます。時間がなくなるまでに何問続けられるかを競います。問題切れを防ぐため、選んだ言語やコースにかかわらず、全言語・全コースから出題します。</td><td>打ち切った問題数</td></tr>
+                    <tr><td>MARATHON</td><td>持ち時間 30 秒で始まり、1 問クリアするごとに時間が増えます。増える時間は、進むほど下の表のとおり減っていきます。10 問クリアしたあとは、ミスするたびに持ち時間が減ります。減る時間は 10 問クリアするごとに増え、下の表のとおりです。10 問クリアするごとに短い知らせが出て、そのときの 1 回のミスで減る時間も出ます。増える時間が変わる区切りでは、変わる前と後の値も出ます（<code>BONUS +10s -&gt; +7s</code>）。時間がなくなるまでに何問続けられるかを競います。問題切れを防ぐため、選んだ言語やコースにかかわらず、全言語・全コースから出題します。</td><td>打ち切った問題数</td></tr>
                     <tr><td>SUDDEN DEATH</td><td>1 回でもミスしたら終了です。何問続けられるかを競います。</td><td>打ち切った問題数</td></tr>
                     <tr><td>CUSTOM</td><td>ルールを自分で決めて遊びます。</td><td>保存されません</td></tr>
                 </table>
                 <p>自己ベストは、言語・コース・モードの組み合わせごとに、このブラウザに保存されます。</p>
                 <p>ゲームが終わると、終了の表示が出てから結果画面へ進みます。決めた問題数を打ち切ると FINISH!、持ち時間がなくなると TIME UP!、ミスの上限に達すると TERMINATED です。</p>
+
+                <h3>MARATHON で 1 問クリアするごとに増える時間</h3>
+                <table>
+                    <tr><th>クリアした問題数</th><th>次の 1 問で増える時間</th></tr>
+                    <tr><td>49 問まで</td><td>10 秒</td></tr>
+                    <tr><td>50 問から</td><td>7 秒</td></tr>
+                    <tr><td>100 問から</td><td>5 秒</td></tr>
+                    <tr><td>200 問から</td><td>3 秒</td></tr>
+                    <tr><td>500 問から</td><td>1 秒</td></tr>
+                </table>
 
                 <h3>MARATHON で 1 回のミスにつき減る時間</h3>
                 <table>
@@ -157,6 +168,7 @@
             <section>
                 <h2>09. 背景</h2>
                 <p>画面左下の BG ボタンを押すたびに、背景が PLAIN（無地）、GRID（方眼）、CIRCUIT（基板）、CRT（走査線）の順に切り替わります。選んだ背景は保存されます。</p>
+                <p>PLAIN 以外の背景では、MARATHON と SUDDEN DEATH の間、問題数が進むにつれて背景が変わっていきます。模様が流れる速さが上がり、模様が細かくなり、色が少しずつ回り、中心から外へ光の筋が流れます。変化は少しずつ続き、急に切り替わることはありません。一時停止の間と結果画面では動きが止まります。OS で「視差効果を減らす」を選んでいるときは、流れる動きを出さず、色の変化だけにします。</p>
             </section>
 
             <p class="howto-back"><a class="btn-gradient" href="./">ゲームを始める</a></p>
@@ -168,6 +180,6 @@
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
-    <script src="theme.js?v=2.6.0"></script>
+    <script src="theme.js?v=2.7.0"></script>
 </body>
 </html>

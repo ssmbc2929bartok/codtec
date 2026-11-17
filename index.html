@@ -21,9 +21,12 @@
     <meta name="twitter:image" content="https://ssmbc2929bartok.github.io/codtec/ogp.png">
     <meta name="twitter:image:alt" content="紺色の背景に、青い文字で「&gt; CODTEC_」と書かれた Codtec のロゴ">
     <!-- ?v= は古いキャッシュを避けるための印。node tools/release.mjs <番号> で、data/registry.js の VERSION と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.6.0">
+    <link rel="stylesheet" href="codtec.css?v=2.7.0">
 </head>
 <body>
+    <!-- 背景の模様を描く層と、流れる光を描く層（theme.js が動かす） -->
+    <div class="bg-layer" aria-hidden="true"></div>
+    <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true"></canvas>
 
     <div id="game-container">
         <section id="menu-screen">
@@ -106,9 +109,9 @@
         </footer>
     </div>
 
-    <script src="theme.js?v=2.6.0"></script>
-    <script src="data/registry.js?v=2.6.0"></script>
-    <script src="data/manifest.js?v=2.6.0"></script>
-    <script src="script.js?v=2.6.0"></script>
+    <script src="theme.js?v=2.7.0"></script>
+    <script src="data/registry.js?v=2.7.0"></script>
+    <script src="data/manifest.js?v=2.7.0"></script>
+    <script src="script.js?v=2.7.0"></script>
 </body>
 </html>
