@@ -25,7 +25,7 @@
     //   lives   : ミスがこの回数に達したら終了
     // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
     // milestone を付けたモードでは、その問題数をクリアするごとに短い知らせを出す。
-    // color はメニューの枠線と結果のスコアに使う色。
+    // short は X のシェア文面に書く短い名前。color はメニューの枠線と結果のスコアに使う色。
     // MARATHON のミスのペナルティ。start 問クリアしたら base 秒になり、
     // そのあとは every 問クリアするごとに増える（増える量は、何問目までかで steps から選ぶ）。
     //   10 問: 0.1 秒 → 20〜50 問: +0.1 秒ずつ → 60〜100 問: +0.2 秒ずつ → 110 問以降: +0.3 秒ずつ
@@ -43,13 +43,13 @@
     };
 
     const MODES = [
-        { id: 'time-trial', label: `${TRIAL_WORDS} WORDS TRIAL`, desc: `${TRIAL_WORDS} 問を打ち切るまでの速さを競う`, rules: { words: TRIAL_WORDS }, score: 'time', color: '#ffd700' },
-        { id: 'score-attack', label: '30s SCORE ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
-        { id: 'score-attack-60', label: '60s SCORE ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
-        { id: 'score-attack-120', label: '120s SCORE ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
-        { id: 'marathon', label: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる', rules: { seconds: 30, bonus: 10, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
-        { id: 'sudden-death', label: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
-        { id: 'custom', label: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
+        { id: 'time-trial', label: `${TRIAL_WORDS} WORDS TRIAL`, short: '10W TRIAL', desc: `${TRIAL_WORDS} 問を打ち切るまでの速さを競う`, rules: { words: TRIAL_WORDS }, score: 'time', color: '#ffd700' },
+        { id: 'score-attack', label: '30s SCORE ATTACK', short: '30s ATTACK', desc: '30 秒間で何問打てるかを競う', rules: { seconds: 30 }, score: 'words', color: '#00ffcc' },
+        { id: 'score-attack-60', label: '60s SCORE ATTACK', short: '60s ATTACK', desc: '60 秒間で何問打てるかを競う', rules: { seconds: 60 }, score: 'words', color: '#ff7ad9' },
+        { id: 'score-attack-120', label: '120s SCORE ATTACK', short: '120s ATTACK', desc: '120 秒間で何問打てるかを競う', rules: { seconds: 120 }, score: 'words', color: '#9d8cff' },
+        { id: 'marathon', label: 'MARATHON', short: 'MARATHON', desc: '持ち時間 30 秒で開始。1 問クリアするごとに 10 秒増える。10 問目から、ミスすると時間が減り、10 問ごとに重くなる', rules: { seconds: 30, bonus: 10, penaltyCurve: MARATHON_PENALTY }, milestone: 10, score: 'words', color: '#ffa94d' },
+        { id: 'sudden-death', label: 'SUDDEN DEATH', short: 'SUDDEN DEATH', desc: '1 回でもミスしたら終了。何問続けられるかを競う', rules: { lives: 1 }, score: 'words', color: '#ff5555' },
+        { id: 'custom', label: 'CUSTOM', short: 'CUSTOM', desc: 'ルールを自分で決めて遊ぶ。記録は保存されない', rules: null, score: 'none', color: '#c9d1d9' },
     ];
 
     // CUSTOM モードの初期設定と、各項目の上限
@@ -105,7 +105,13 @@
 
     // phase: 'loading' | 'menu' | 'countdown' | 'playing' | 'paused' | 'ending' | 'result'
     let phase = 'loading';
-    let selection = { lang: 'cpp', course: 'all', mode: 'time-trial', custom: { ...CUSTOM_DEFAULT } };
+    // 入力のしかた。editor では、開きの括弧や引用符を打つと、対応する閉じ側が自動で入る
+    const INPUTS = [
+        { id: 'normal', label: 'NORMAL', desc: '表示されたとおりに、すべての文字を自分で打つ' },
+        { id: 'editor', label: 'EDITOR', desc: '( [ { " \' ` を打つと、対応する閉じ側が自動で入る。記録は NORMAL と別に保存する' },
+    ];
+
+    let selection = { lang: 'cpp', course: 'all', mode: 'time-trial', input: 'normal', custom: { ...CUSTOM_DEFAULT } };
     let game = null;
     let timerInterval = null;
     let countdownTimeout = null;
@@ -122,10 +128,12 @@
     };
 
     // v1 の記録をそのまま引き継げるよう、全コースのときは従来と同じキーを使う
+    // エディタモードは打つキーが少ないので、記録を別に保存する
     function bestKey(sel) {
-        return sel.course === 'all'
+        const base = sel.course === 'all'
             ? `best_${sel.lang}_${sel.mode}`
             : `best_${sel.lang}_${sel.course}_${sel.mode}`;
+        return sel.input === 'editor' ? `${base}_editor` : base;
     }
 
     function readBest(sel) {
@@ -327,6 +335,14 @@
         const mode = getMode(selection.mode);
         $('mode-desc').textContent = mode.desc;
 
+        // 入力のしかた
+        const inputBox = $('input-selector');
+        inputBox.textContent = '';
+        INPUTS.forEach(input => {
+            inputBox.appendChild(makeChip(input.label, null, input.id === selection.input, () => select({ input: input.id })));
+        });
+        $('input-desc').textContent = INPUTS.find(i => i.id === selection.input).desc;
+
         // CUSTOM のときだけルールの入力欄を出す
         const isCustom = mode.id === 'custom';
         customPanel.hidden = !isCustom;
@@ -425,6 +441,10 @@
             rules: normalizeRules(selection.mode === 'custom' ? selection.custom : getMode(selection.mode).rules),
             dead: false,     // ミスの上限で終わったか
             penaltyTotal: 0, // ミスで減った持ち時間の合計（秒）
+            editor: selection.input === 'editor',
+            pairs: {},       // いまの問題の、開きの位置 → 閉じの位置
+            autoFilled: new Set(),
+            typeOver: [],    // 飛び越えた閉じ側の文字（打ち直されたら見逃す）
             pool,
             bag: [],
             target: null,
@@ -505,6 +525,8 @@
         game.target = drawWord();
         game.charIdx = 0;
         game.wordMiss = 0;
+        game.pairs = game.editor ? Codtec.findPairs(game.target) : {};
+        game.autoFilled = new Set(); // 自動で入った閉じ側の位置
         updateProgress();
 
         // コースごとに文字色を変える
@@ -530,6 +552,7 @@
     function updateProgress() {
         const { rules } = game;
         const parts = [game.langData.name];
+        if (game.editor) parts.push('EDITOR');
         parts.push(rules.words
             ? `PROGRESS: ${Math.min(game.wordIdx + 1, rules.words)} / ${rules.words}`
             : `WORDS CLEARED: ${game.wordIdx}`);
@@ -637,8 +660,23 @@
 
         if (e.key === target[game.charIdx]) {
             game.totalTyped++;
+            game.typeOver = []; // 先へ進んだので、打ち直しの見逃しは終わり
             span.className = 'cleared';
+
+            // エディタモード: 開きを打ったら、対応する閉じ側を入力済みにする
+            const close = game.pairs[game.charIdx];
+            if (close !== undefined) {
+                game.autoFilled.add(close);
+                game.spans[close].className = 'auto';
+            }
             game.charIdx++;
+
+            // 自動で入った閉じ側は飛び越える。癖で打ち直しても見逃せるよう、文字を覚えておく
+            while (game.autoFilled.has(game.charIdx)) {
+                game.spans[game.charIdx].className = 'cleared auto';
+                game.typeOver.push(target[game.charIdx]);
+                game.charIdx++;
+            }
 
             if (game.charIdx < target.length) {
                 game.spans[game.charIdx].className = 'current';
@@ -655,6 +693,12 @@
 
         // スペースが不要な場所でのスペースはミスに数えない
         if (e.key === ' ') return;
+
+        // エディタモード: 自動で入った閉じ側を、いつもの癖で打ち直したぶんは見逃す
+        if (game.typeOver.length > 0 && e.key === game.typeOver[0]) {
+            game.typeOver.shift();
+            return;
+        }
 
         game.missCount++;
         game.wordMiss++;
@@ -763,6 +807,7 @@
         else if (e.key === 'ArrowDown') { e.preventDefault(); select({ coursePick: false, course: step(availableCourses(lang), courseCursor, 1) }); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); select({ coursePick: false, course: step(availableCourses(lang), courseCursor, -1) }); }
         else if (/^[1-9]$/.test(e.key) && MODES[Number(e.key) - 1]) select({ mode: MODES[Number(e.key) - 1].id });
+        else if (e.key.toLowerCase() === 'e') select({ input: selection.input === 'editor' ? 'normal' : 'editor' });
     }
 
     // 別のタブやウィンドウに移ったら自動で一時停止する
@@ -817,12 +862,13 @@
         if (tracked) {
             const prevBest = readBest(g.sel);
             isNewRecord = prevBest === null || (g.mode.score === 'time' ? score < prevBest : score > prevBest);
+            if (g.mode.score === 'words' && score === 0) isNewRecord = false; // 1 問も打てなかったときは記録にしない
             if (isNewRecord) store.set(bestKey(g.sel), String(score));
             bestText = isNewRecord
                 ? (prevBest === null ? 'NEW RECORD!' : `NEW RECORD!  (前回のベスト: ${formatScore(g.mode, prevBest)})`)
-                : `BEST: ${formatScore(g.mode, prevBest)}`;
+                : (prevBest === null ? 'BEST: ---' : `BEST: ${formatScore(g.mode, prevBest)}`);
         }
-        const modeText = tracked ? g.mode.label : `CUSTOM (${ruleSummary(g.rules)})`;
+        const modeText = tracked ? g.mode.short : `${g.mode.short} (${ruleSummary(g.rules)})`;
 
         // PICK LANGS のときは、選んだ言語の名前も並べる
         const baseName = g.langData.id === PICK_ID
@@ -831,28 +877,52 @@
         const langText = g.sel.course === 'all' ? baseName : `${baseName} (${courseLabel(g.sel.course)})`;
 
         // X にシェアする文面。画面と同じ呼び名（モード名・コース名・終わり方）で書く
-        // PICK LANGS は言語名が長くなるので、3 つまで並べて残りは数で表す
-        const members = g.langData.members || [];
-        const shareBase = g.langData.id === PICK_ID
-            ? `${members.slice(0, 3).map(langName).join(' + ')}${members.length > 3 ? ` +${members.length - 3}` : ''}`
-            : g.langData.name;
-        const shareLang = g.sel.course === 'all' ? shareBase : `${shareBase} (${courseLabel(g.sel.course)})`;
+        // 複数の言語から出題されたときは、いちばん多く出た言語の名前に「+N」を付ける
+        // （N は、ほかに出題された言語の数。同数なら、メニューで先に並ぶ言語を書く）
+        const langCounts = {};
+        g.history.forEach(entry => { langCounts[entry.item.lang] = (langCounts[entry.item.lang] || 0) + 1; });
+        const playedLangs = Codtec.languages.map(l => l.id).filter(id => langCounts[id]);
+        let shareBase = g.langData.name;
+        if (playedLangs.length > 0) {
+            const top = playedLangs.reduce((best, id) => (langCounts[id] > langCounts[best] ? id : best));
+            shareBase = playedLangs.length > 1 ? `${langName(top)} +${playedLangs.length - 1}` : langName(top);
+        }
+        // 実際に出題されたコースを、略称で並べる（1 つでも略称。全コースが出たら ALL）
+        const playedIds = new Set(g.history.map(entry => entry.item.course));
+        const played = Codtec.COURSES.filter(c => playedIds.has(c.id));
+        // 1 問も記録がないときは、選んだコースを書く
+        const selectedIds = courseIds(g.sel.course);
+        let shareCourse = selectedIds.length > 0
+            ? Codtec.COURSES.filter(c => selectedIds.includes(c.id)).map(c => c.short).join('/')
+            : 'ALL';
+        if (played.length === Codtec.COURSES.length) shareCourse = 'ALL';
+        else if (played.length > 0) shareCourse = played.map(c => c.short).join('/');
         const errLog = g.missCount === 0
             ? 'no errors detected.'
             : `${g.missCount} ${g.missCount === 1 ? 'case' : 'cases'} detected.`;
         const exitText = g.endKind ? ENDINGS[g.endKind].title.replace('!', '') : 'FINISH';
 
-        const shareText = `[CODTEC_REPORT]
->> LANG: ${shareLang}
->> MODE: ${modeText}
->> RESULT: ${scoreText}${isNewRecord ? ' [NEW RECORD]' : ''}
->> KPM: ${kpm} / ACC: ${accuracy}%
->> ERR_LOG: ${errLog}
->> EXIT: ${exitText}
-
-#codtec
-${SITE_URL}`;
+        // X の上限（280 文字。URL は 23 文字と数えられる）を超えるときは、後ろの行から省く
+        // 全言語・全コースから出すと決まっているモードでは、言語とコースの行を書かない
+        // 代わりに、時間切れまで生き残った長さを書く
+        const fixedPool = MIX_ONLY_MODES.includes(g.mode.id);
+        const minutes = Math.floor(finalTime / 60);
+        const survived = minutes > 0 ? `${minutes}m ${Math.floor(finalTime % 60)}s` : `${Math.floor(finalTime)}s`;
+        const lines = [
+            '[CODTEC_REPORT]',
+            ...(fixedPool ? [] : [`>> LANG: ${shareBase}`, `>> COURSE: ${shareCourse}`]),
+            `>> MODE: ${modeText}`,
+            ...(g.editor ? ['>> INPUT: EDITOR'] : []),
+            `>> RESULT: ${scoreText}${isNewRecord ? ' [NEW]' : ''}`,
+            ...(fixedPool ? [`>> TIME: ${survived}`] : []),
+            `>> KPM: ${kpm} / ACC: ${accuracy}%`,
+            `>> ERR_LOG: ${errLog}`,
+            `>> EXIT: ${exitText}`,
+        ];
+        const tweetLength = () => lines.join('\n').length + '\n\n#codtec\n'.length + 23;
+        while (tweetLength() > 280 && lines.length > 4) lines.pop();
         // ハッシュタグは文面に書く。hashtags= で渡すと URL のうしろに付いてしまう
+        const shareText = `${lines.join('\n')}\n\n#codtec\n${SITE_URL}`;
         const xLink = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
 
         resultScreen.innerHTML = `
@@ -883,7 +953,7 @@ ${SITE_URL}`;
                 <a class="btn-ghost" href="${PORTAL_URL}">ポータルに戻る</a>
             </div>
         `;
-        resultScreen.querySelector('.result-context').textContent = `${langText} / ${g.mode.label}`;
+        resultScreen.querySelector('.result-context').textContent = `${langText} / ${g.mode.label}${g.editor ? ' / EDITOR' : ''}`;
         resultScreen.querySelector('.result-best').textContent = bestText;
         renderReview(g.history, g.mixed);
         show('result');
@@ -981,6 +1051,7 @@ ${SITE_URL}`;
         selection.picked = pickedIds();
         if (selection.lang === PICK_ID && selection.picked.length === 0) selection.lang = Codtec.languages[0].id;
         if (!getMode(selection.mode)) selection.mode = MODES[0].id;
+        if (!INPUTS.some(i => i.id === selection.input)) selection.input = INPUTS[0].id;
         fixCourse();
 
         startBtn.disabled = false;

@@ -89,6 +89,8 @@ kbd {
     text-align: right;
     padding-right: 6px;
 }
+/* 注意書きがないときは、その行の高さも取らない */
+#lang-note:empty { display: none; }
 .lang-locked .chip:not(.active) { opacity: 0.35; }
 .chip.picked { border-color: var(--accent-cyan); color: #fff; background: rgba(0, 255, 204, 0.12); }
 .chip.picked::before { content: '\2713'; margin-right: 6px; color: var(--accent-cyan); }
@@ -277,6 +279,9 @@ kbd {
 #word-display span { color: #888; border-bottom: 3px solid transparent; }
 #word-display span.current { color: #fff; border-bottom-color: var(--accent-cyan); }
 #word-display span.cleared { color: var(--course, #00ff00); }
+/* エディタモードで自動で入った閉じ側（まだ通り過ぎていないものは薄く、通り過ぎたら少し薄いまま） */
+#word-display span.auto { color: var(--course, #00ff00); opacity: 0.45; }
+#word-display span.cleared.auto { opacity: 0.7; }
 #word-display span.miss {
     display: inline-block;
     background-color: #ff0000;

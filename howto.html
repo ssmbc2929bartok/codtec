@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://ssmbc2929bartok.github.io/codtec/ogp.png">
     <meta name="twitter:image:alt" content="紺色の背景に、青い文字で「&gt; CODTEC_」と書かれた Codtec のロゴ">
     <!-- ?v= は node tools/release.mjs <番号> で index.html と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.5.0">
+    <link rel="stylesheet" href="codtec.css?v=2.6.0">
 </head>
 <body class="doc-page">
 
@@ -36,6 +36,7 @@
                     <li>言語を選びます。先頭の ALL LANGS を選ぶと、全言語をまたいで出題します。PICK LANGS を選ぶと、言語を押すたびに出題する言語へ入れたり外したりでき、選んだ言語だけから出題します。もう一度 PICK LANGS を押すと、1 言語の選択に戻ります。</li>
                     <li>コース（出題する範囲）を選びます。</li>
                     <li>モードを選びます。</li>
+                    <li>入力のしかた（NORMAL か EDITOR）を選びます。</li>
                     <li><kbd>Enter</kbd> か MISSION START で開始します。3 カウントのあとに問題が出ます。</li>
                     <li>表示されたコードを、左から順にそのまま打ちます。</li>
                 </ol>
@@ -112,6 +113,7 @@
                     <tr><td>メニュー</td><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd></td><td>言語を選ぶ</td></tr>
                     <tr><td>メニュー</td><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>コースを選ぶ（1 つずつ切り替える）</td></tr>
                     <tr><td>メニュー</td><td><kbd>1</kbd> - <kbd>7</kbd></td><td>モードを選ぶ</td></tr>
+                    <tr><td>メニュー</td><td><kbd>E</kbd></td><td>入力のしかたを切り替える</td></tr>
                     <tr><td>メニュー</td><td><kbd>Enter</kbd></td><td>開始</td></tr>
                     <tr><td>プレイ中</td><td><kbd>Esc</kbd></td><td>一時停止</td></tr>
                     <tr><td>一時停止中</td><td><kbd>Esc</kbd> / <kbd>Enter</kbd></td><td>再開</td></tr>
@@ -124,23 +126,36 @@
             </section>
 
             <section>
-                <h2>06. 一時停止</h2>
+                <h2>06. エディタモード</h2>
+                <p>入力のしかたを EDITOR にすると、エディタのように、開きの括弧や引用符を打ったときに対応する閉じ側が自動で入ります。</p>
+                <ul>
+                    <li>対象は <code>( )</code> <code>[ ]</code> <code>{ }</code> <code>" "</code> <code>' '</code> と、バッククォートの対です。</li>
+                    <li>開きを打つと、対応する閉じ側が薄い色で入力済みになります。カーソルがそこに来ると、自動で飛び越えます。</li>
+                    <li>飛び越えた閉じ側を、いつもの癖で打ち直しても、ミスにはなりません。</li>
+                    <li>閉じる相手が問題文の中にない括弧は、ふつうに打ちます。</li>
+                    <li>Rust のライフタイム（<code>'a</code> など）が入っている問題では、<code>'</code> を対にしません。</li>
+                    <li>打つキーが減るので、自己ベストは NORMAL と別に保存します。KPM は、実際に打ったキーだけで数えます。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>07. 一時停止</h2>
                 <p>プレイ中に <kbd>Esc</kbd> か右上の PAUSE を押すと止まります。止まっている間はタイマーが進まず、問題文は隠れます。別のタブやウィンドウに移ったときも自動で止まります。</p>
             </section>
 
             <section>
-                <h2>07. 結果と解説</h2>
+                <h2>08. 結果と解説</h2>
                 <ul>
                     <li>KPM は 1 分あたりに正しく打ったキーの数です。</li>
                     <li>ACCURACY は、打ったキーのうち正しかった割合です。</li>
                     <li>REVIEW には、プレイした問題がコース・ミスの回数・解説つきで並びます。どういう文法やデータ構造なのか、何によく使われるのかを確かめられます。</li>
                     <li>解説はプレイ中にも、問題文の下に出ます。<code>ll</code> や <code>np</code> のような別名を使う問題では、それが何の別名かも解説に書いてあります。</li>
-                    <li>「結果をシェア」を押すと、結果を X に投稿する画面が開きます。</li>
+                    <li>「結果をシェア」を押すと、結果を X に投稿する画面が開きます。文面は短くするために略して書きます。<code>LANG: Rust +4</code> は、Rust がいちばん多く出て、ほかに 4 言語から出題されたことを表します。<code>COURSE</code> は出題されたコースの略称で、BAS は BASICS、STD は STDLIB、IDM は IDIOMS、ADV は ADVANCED、LIB は LIBS です。5 つすべてが出たときは ALL と書きます。<code>[NEW]</code> は自己ベストの更新です。</li>
                 </ul>
             </section>
 
             <section>
-                <h2>08. 背景</h2>
+                <h2>09. 背景</h2>
                 <p>画面左下の BG ボタンを押すたびに、背景が PLAIN（無地）、GRID（方眼）、CIRCUIT（基板）、CRT（走査線）の順に切り替わります。選んだ背景は保存されます。</p>
             </section>
 
@@ -153,6 +168,6 @@
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
-    <script src="theme.js?v=2.5.0"></script>
+    <script src="theme.js?v=2.6.0"></script>
 </body>
 </html>

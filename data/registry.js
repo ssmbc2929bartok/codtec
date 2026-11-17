@@ -4,7 +4,7 @@
 (function (global) {
     'use strict';
 
-    const VERSION = '2.5.0';
+    const VERSION = '2.6.0';
 
     // 1 問の長さの上限（これを超える行は読み込み時に除外して警告する）
     const MAX_LENGTH = 56;
@@ -20,12 +20,13 @@
     ];
 
     // コース（問題セット）の種類。言語ファイルの「@@ 名前」と対応する。
+    // short は、シェア文面で複数のコースを並べるときの略称。
     const COURSES = [
-        { id: 'basics', label: 'BASICS', desc: '基礎の構文' },
-        { id: 'stdlib', label: 'STDLIB', desc: '標準ライブラリ・データ構造・組み込みの機能' },
-        { id: 'features', label: 'IDIOMS', desc: 'その言語らしい書き方' },
-        { id: 'advanced', label: 'ADVANCED', desc: '応用・上級者向け' },
-        { id: 'ecosystem', label: 'LIBS', desc: 'ライブラリ・各界隈の定番' },
+        { id: 'basics', label: 'BASICS', short: 'BAS', desc: '基礎の構文' },
+        { id: 'stdlib', label: 'STDLIB', short: 'STD', desc: '標準ライブラリ・データ構造・組み込みの機能' },
+        { id: 'features', label: 'IDIOMS', short: 'IDM', desc: 'その言語らしい書き方' },
+        { id: 'advanced', label: 'ADVANCED', short: 'ADV', desc: '応用・上級者向け' },
+        { id: 'ecosystem', label: 'LIBS', short: 'LIB', desc: 'ライブラリ・各界隈の定番' },
     ];
 
     const languages = [];
@@ -147,6 +148,56 @@
         return id === MIX_ID ? getMix() : byId[id];
     }
 
+    // --- エディタモード用: 括弧と引用符の対を見つける ---
+    const BRACKETS = { '(': ')', '[': ']', '{': '}' };
+    const BRACKET_CLOSERS = new Set(Object.values(BRACKETS));
+    const QUOTES = new Set(['"', "'", '`']);
+
+    // Rust のライフタイム（'a や 'static）が入っている問題かどうか。
+    // 入っていると ' が引用符ではないので、その問題では ' を対にしない
+    function hasLifetime(item) {
+        return item.lang === 'rust' && /'[A-Za-z_]\w*(?!\w|')/.test(item.text);
+    }
+
+    // 問題文の中の対を { 開きの位置: 閉じの位置 } で返す。
+    //   - 対象は () [] {} と、"" '' ``（閉じる相手が同じ問題文の中にあるものだけ）
+    //   - 引用符の中にある括弧は対にしない
+    //   - don't のような単語の途中の ' は開きにしない
+    function findPairs(item) {
+        if (item.pairs) return item.pairs;
+        const text = item.text;
+        const skipApostrophe = hasLifetime(item);
+        const pairs = {};
+        const stack = [];
+        let quote = null;
+        let quoteAt = -1;
+
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            if (quote) {
+                if (ch === '\\') { i++; continue; } // \" のようなエスケープは閉じにしない
+                if (ch === quote) { pairs[quoteAt] = i; quote = null; }
+                continue;
+            }
+            if (QUOTES.has(ch)) {
+                if (ch === "'" && (skipApostrophe || /\w/.test(text[i - 1] || ''))) continue;
+                if (text.indexOf(ch, i + 1) === -1) continue; // 閉じる相手がない
+                quote = ch;
+                quoteAt = i;
+            } else if (BRACKETS[ch]) {
+                stack.push(i);
+            } else if (BRACKET_CLOSERS.has(ch)) {
+                const open = stack[stack.length - 1];
+                if (open !== undefined && BRACKETS[text[open]] === ch) {
+                    stack.pop();
+                    pairs[open] = i;
+                }
+            }
+        }
+        item.pairs = pairs;
+        return pairs;
+    }
+
     // コースを指定して問題の配列を取り出す（'all' なら全コース）
     // lang には言語の id か、get() や combine() が返した言語を渡す
     // courseId には 1 つのコースの id か、複数を「+」でつないだもの（'basics+stdlib'）を渡す
@@ -170,5 +221,7 @@
         get,
         combine,
         getPool,
+        findPairs,
+        hasLifetime,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

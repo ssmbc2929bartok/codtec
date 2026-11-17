@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://ssmbc2929bartok.github.io/codtec/ogp.png">
     <meta name="twitter:image:alt" content="紺色の背景に、青い文字で「&gt; CODTEC_」と書かれた Codtec のロゴ">
     <!-- ?v= は古いキャッシュを避けるための印。node tools/release.mjs <番号> で、data/registry.js の VERSION と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.5.0">
+    <link rel="stylesheet" href="codtec.css?v=2.6.0">
 </head>
 <body>
 
@@ -57,12 +57,18 @@
                 </div>
             </div>
 
+            <div class="selection-group">
+                <p class="label">04. SELECT INPUT</p>
+                <div id="input-selector" class="chip-row"></div>
+                <p id="input-desc" class="desc"></p>
+            </div>
+
             <p id="best-display" class="best-display"></p>
             <button id="start-btn" class="btn-gradient" type="button" disabled>
                 <span>[ MISSION START ]</span>
             </button>
             <p class="key-hint">
-                <kbd>&larr;</kbd><kbd>&rarr;</kbd> 言語　<kbd>&uarr;</kbd><kbd>&darr;</kbd> コース　<kbd>1</kbd>-<kbd>7</kbd> モード　<kbd>Enter</kbd> 開始
+                <kbd>&larr;</kbd><kbd>&rarr;</kbd> 言語　<kbd>&uarr;</kbd><kbd>&darr;</kbd> コース　<kbd>1</kbd>-<kbd>7</kbd> モード　<kbd>E</kbd> 入力　<kbd>Enter</kbd> 開始
             </p>
         </section>
 
@@ -100,9 +106,9 @@
         </footer>
     </div>
 
-    <script src="theme.js?v=2.5.0"></script>
-    <script src="data/registry.js?v=2.5.0"></script>
-    <script src="data/manifest.js?v=2.5.0"></script>
-    <script src="script.js?v=2.5.0"></script>
+    <script src="theme.js?v=2.6.0"></script>
+    <script src="data/registry.js?v=2.6.0"></script>
+    <script src="data/manifest.js?v=2.6.0"></script>
+    <script src="script.js?v=2.6.0"></script>
 </body>
 </html>
