@@ -26,7 +26,7 @@
             apply();
             // プレイ中に切り替えたら、動く背景も切り替え先に合わせる
             if (window.CodtecBg && fx.active) {
-                if (current === 'plain') { halt(); resetLayer(); } else if (!fx.paused) run();
+                if (current === 'plain') { halt(); fx.warp = null; resetLayer(); } else applyLook(fx.now);
             }
             button.blur(); // プレイ中のキー入力でボタンが反応しないようにする
         });
@@ -37,20 +37,33 @@
     // ------------------------------------------------------------------
     // 進行に合わせて変化する背景（MARATHON と SUDDEN DEATH で script.js が呼ぶ）
     //   start()         : 変化を始める（PLAIN のときは何もしない）
-    //   setLevel(words) : クリアした問題数を伝える。見た目は、この値へ向かって少しずつ変わる
+    //   setLevel(words) : クリアした問題数を伝える。STAGE_EVERY 問ごとに、ワープして次の見た目へ移る
     //   pause() / resume() : 一時停止の間は動きを止める
-    //   stop()          : もとの動かない背景に戻す
+    //   stop()          : もとの背景に戻す
+    //
+    // ふだんは止まっていて、区切りを越えた瞬間だけ動く。ワープの間は、模様が一気に拡大してから
+    // 新しい細かさに落ち着き、色相が次の色へ移り、中心から外へ光の筋が走る。
     // ------------------------------------------------------------------
     const layer = document.querySelector('.bg-layer');
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas ? canvas.getContext('2d') : null;
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // 流れる光の、背景ごとの基準の色相
-    const BASE_HUE = { grid: 210, circuit: 140, crt: 165 };
-    const MAX_STREAKS = 260;
+    const STAGE_EVERY = 10;   // 何問ごとにワープするか
+    const WARP_MS = 1300;     // ワープにかける時間
+    const BASE_HUE = { grid: 210, circuit: 140, crt: 165 }; // 光の筋の、背景ごとの基準の色相
+    const STREAKS = 240;
 
-    const fx = { active: false, paused: false, running: false, frame: 0, last: 0, target: 0, level: 0, ox: 0, oy: 0, time: 0, streaks: [] };
+    // 段階ごとの見た目。進むほど模様が細かく、明るくなり、色相が回る
+    function look(stage) {
+        return {
+            hue: stage * 47,                                  // 1 段階ごとに色が変わる（度）
+            scale: Math.max(0.42, 1 - 0.07 * stage),          // 模様の細かさ（小さいほど細かい）
+            glow: 1 + Math.min(0.7, 0.07 * stage),            // 明るさ
+        };
+    }
+
+    const fx = { active: false, paused: false, running: false, frame: 0, last: 0, stage: 0, now: look(0), warp: null, streaks: [] };
 
     function resizeCanvas() {
         if (!canvas) return;
@@ -59,64 +72,73 @@
         canvas.height = Math.floor(window.innerHeight * ratio);
     }
 
+    function applyLook(values) {
+        if (!layer) return;
+        layer.style.setProperty('--scale', values.scale.toFixed(3));
+        layer.style.setProperty('--hue', `${(values.hue % 360).toFixed(1)}deg`);
+        layer.style.setProperty('--glow', values.glow.toFixed(3));
+    }
+
     function resetLayer() {
-        if (layer) ['--ox', '--oy', '--scale', '--hue', '--glow'].forEach(name => layer.style.removeProperty(name));
+        if (layer) ['--scale', '--hue', '--glow'].forEach(name => layer.style.removeProperty(name));
         if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
+    // ワープの 1 コマを描く。終わったら止まる
     function draw(now) {
-        if (!fx.running) return;
+        if (!fx.running || !fx.warp) return;
         const dt = Math.min((now - fx.last) / 1000, 0.1);
         fx.last = now;
-        fx.time += dt;
+        const warp = fx.warp;
+        warp.t = Math.min(1, warp.t + (dt * 1000) / WARP_MS);
+        const p = warp.t * warp.t * (3 - 2 * warp.t); // なめらかに始まり、なめらかに終わる
+        const surge = Math.sin(Math.PI * warp.t);     // 途中でいちばん強くなる山
 
-        // 問題数が増えても見た目が飛ばないよう、目標の値へ少しずつ近づける
-        fx.level += (fx.target - fx.level) * Math.min(1, dt * 1.2);
-        const intensity = 1 - Math.exp(-fx.level / 30); // 0（開始時）から 1 に近づく
+        // 模様は、いったん大きく拡大してから新しい細かさに落ち着く。色と明るさは次の段階へ移る
+        fx.now = {
+            hue: warp.from.hue + (warp.to.hue - warp.from.hue) * p,
+            scale: (warp.from.scale + (warp.to.scale - warp.from.scale) * p) * (1 + 1.8 * surge),
+            glow: warp.from.glow + (warp.to.glow - warp.from.glow) * p + 0.9 * surge,
+        };
+        applyLook(fx.now);
 
-        if (layer && current !== 'plain') {
-            const speed = reduceMotion ? 0 : 12 + 360 * intensity; // 模様が流れる速さ（px/秒）
-            fx.oy = (fx.oy + speed * dt) % 4400;
-            fx.ox = (fx.ox + speed * 0.35 * dt) % 4400;
-            layer.style.setProperty('--oy', `${fx.oy.toFixed(1)}px`);
-            layer.style.setProperty('--ox', `${current === 'circuit' ? fx.ox.toFixed(1) : 0}px`);
-            // 進むほど模様が細かくなり、ゆっくり脈打つ。色相は問題数に合わせて回る
-            layer.style.setProperty('--scale', (1 - 0.35 * intensity + 0.04 * Math.sin(fx.time * 0.7)).toFixed(3));
-            layer.style.setProperty('--hue', `${((fx.level * 4) % 360).toFixed(1)}deg`);
-            layer.style.setProperty('--glow', (1 + 0.6 * intensity).toFixed(3));
-        }
-
-        // 中心から外へ流れる光の筋（ワープの表現）
+        // 中心から外へ走る光の筋
         if (ctx) {
             const w = canvas.width;
             const h = canvas.height;
-            ctx.clearRect(0, 0, w, h);
-            const count = reduceMotion || current === 'plain' ? 0 : Math.floor(MAX_STREAKS * intensity);
             const maxR = Math.hypot(w, h) / 2;
-            const hue = (BASE_HUE[current] || 200) + fx.level * 4;
-            while (fx.streaks.length < count) fx.streaks.push({ angle: Math.random() * Math.PI * 2, r: Math.random() * maxR });
-            fx.streaks.length = count;
+            const hue = (BASE_HUE[current] || 200) + fx.now.hue;
+            ctx.clearRect(0, 0, w, h);
             ctx.lineCap = 'round';
             for (const s of fx.streaks) {
                 const depth = s.r / maxR; // 外側ほど速く、長く、明るい
-                s.r += (40 + 900 * intensity) * (0.25 + depth * 1.75) * dt;
-                if (s.r > maxR) { s.r = Math.random() * 40; s.angle = Math.random() * Math.PI * 2; continue; }
-                const len = 6 + 120 * intensity * depth;
+                s.r += 2600 * (0.2 + depth * 1.8) * surge * dt;
+                if (s.r > maxR) { s.r = Math.random() * 60; s.angle = Math.random() * Math.PI * 2; }
+                const len = (10 + 220 * depth) * surge;
                 const cos = Math.cos(s.angle);
                 const sin = Math.sin(s.angle);
-                ctx.strokeStyle = `hsla(${hue % 360}, 100%, 72%, ${(0.15 + 0.7 * depth).toFixed(3)})`;
-                ctx.lineWidth = 1 + 2 * depth;
+                ctx.strokeStyle = `hsla(${hue % 360}, 100%, 75%, ${((0.2 + 0.8 * depth) * surge).toFixed(3)})`;
+                ctx.lineWidth = 1 + 2.5 * depth;
                 ctx.beginPath();
                 ctx.moveTo(w / 2 + cos * s.r, h / 2 + sin * s.r);
                 ctx.lineTo(w / 2 + cos * (s.r + len), h / 2 + sin * (s.r + len));
                 ctx.stroke();
             }
         }
+
+        if (warp.t >= 1) {
+            fx.warp = null;
+            fx.now = warp.to;
+            applyLook(fx.now);
+            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+            halt();
+            return;
+        }
         fx.frame = requestAnimationFrame(draw);
     }
 
     function run() {
-        if (fx.running) return;
+        if (fx.running || !fx.warp) return;
         fx.running = true;
         fx.last = performance.now();
         fx.frame = requestAnimationFrame(draw);
@@ -127,6 +149,22 @@
         cancelAnimationFrame(fx.frame);
     }
 
+    // 次の段階へワープする
+    function warpTo(stage) {
+        fx.stage = stage;
+        const to = look(stage);
+        if (current === 'plain') { fx.now = to; return; }
+        if (reduceMotion) { // 動きを出さない設定では、見た目だけを切り替える
+            fx.now = to;
+            applyLook(fx.now);
+            return;
+        }
+        const maxR = canvas ? Math.hypot(canvas.width, canvas.height) / 2 : 1000;
+        fx.streaks = Array.from({ length: STREAKS }, () => ({ angle: Math.random() * Math.PI * 2, r: Math.random() * maxR * 0.6 }));
+        fx.warp = { t: 0, from: { ...fx.now }, to };
+        if (!fx.paused) run();
+    }
+
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
@@ -134,11 +172,11 @@
         start() {
             this.stop();
             fx.active = true;
-            fx.paused = false;
-            if (current !== 'plain') run();
         },
         setLevel(words) {
-            fx.target = words;
+            if (!fx.active) return;
+            const stage = Math.floor(words / STAGE_EVERY);
+            if (stage > fx.stage) warpTo(stage);
         },
         pause() {
             fx.paused = true;
@@ -151,10 +189,10 @@
         stop() {
             halt();
             fx.active = false;
-            fx.target = 0;
-            fx.level = 0;
-            fx.ox = 0;
-            fx.oy = 0;
+            fx.paused = false;
+            fx.stage = 0;
+            fx.now = look(0);
+            fx.warp = null;
             fx.streaks = [];
             resetLayer();
         },

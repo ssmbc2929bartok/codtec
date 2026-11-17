@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://ssmbc2929bartok.github.io/codtec/ogp.png">
     <meta name="twitter:image:alt" content="紺色の背景に、青い文字で「&gt; CODTEC_」と書かれた Codtec のロゴ">
     <!-- ?v= は node tools/release.mjs <番号> で index.html と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.7.0">
+    <link rel="stylesheet" href="codtec.css?v=2.7.1">
 </head>
 <body class="doc-page">
     <div class="bg-layer" aria-hidden="true"></div>
@@ -168,7 +168,17 @@
             <section>
                 <h2>09. 背景</h2>
                 <p>画面左下の BG ボタンを押すたびに、背景が PLAIN（無地）、GRID（方眼）、CIRCUIT（基板）、CRT（走査線）の順に切り替わります。選んだ背景は保存されます。</p>
-                <p>PLAIN 以外の背景では、MARATHON と SUDDEN DEATH の間、問題数が進むにつれて背景が変わっていきます。模様が流れる速さが上がり、模様が細かくなり、色が少しずつ回り、中心から外へ光の筋が流れます。変化は少しずつ続き、急に切り替わることはありません。一時停止の間と結果画面では動きが止まります。OS で「視差効果を減らす」を選んでいるときは、流れる動きを出さず、色の変化だけにします。</p>
+                <p>PLAIN 以外の背景では、MARATHON と SUDDEN DEATH の間、10 問クリアするごとに背景がワープして、次の見た目に変わります。ワープの間は、模様が一気に拡大してから新しい細かさに落ち着き、色が次の色へ移り、中心から外へ光の筋が走ります。進むほど、模様は細かく、明るくなります。ワープとワープの間は、背景は動きません。OS で「視差効果を減らす」を選んでいるときは、ワープの動きを出さず、見た目だけを切り替えます。</p>
+            </section>
+
+            <section>
+                <h2>10. 警告と停止の演出</h2>
+                <ul>
+                    <li>持ち時間のあるモードで残りが 10 秒以下になると、画面の縁が橙に脈打ち、タイマーの色が変わり、背景がゆっくり鼓動します。</li>
+                    <li>残りが 5 秒以下になると、縁とタイマーが赤くなって点滅し、背景が小刻みに揺れます。問題をクリアして時間が増えると、警告は消えます。</li>
+                    <li>時間切れになったときと、ミスの上限に達したときは、画面が赤く明滅してシステムが止まる演出が出ます。結果画面も、赤く沈んだままになります。</li>
+                    <li>決めた問題数を打ち切って終わったとき（FINISH!）は、この演出は出ません。</li>
+                </ul>
             </section>
 
             <p class="howto-back"><a class="btn-gradient" href="./">ゲームを始める</a></p>
@@ -180,6 +190,6 @@
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
-    <script src="theme.js?v=2.7.0"></script>
+    <script src="theme.js?v=2.7.1"></script>
 </body>
 </html>

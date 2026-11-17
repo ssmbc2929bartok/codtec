@@ -452,9 +452,9 @@ kbd {
 .howto-back .btn-gradient { text-decoration: none; }
 
 /* --- 背景（theme.js が body の data-bg を切り替える） --- */
-/* 模様は .bg-layer に描く。MARATHON と SUDDEN DEATH では、theme.js が下の変数を少しずつ変えて、
-   模様を流したり、色や細かさを変えたりする。
-     --ox / --oy : 模様をずらす量   --scale : 模様の細かさ   --hue : 色相の回転   --glow : 明るさ */
+/* 模様は .bg-layer に描く。MARATHON と SUDDEN DEATH では、theme.js が区切りごとに下の変数を変えて、
+   ワープしたように次の見た目へ移す。模様は画面の中央を基準に拡大・縮小する。
+     --scale : 模様の細かさ   --hue : 色相の回転   --glow : 明るさ */
 .bg-layer, .bg-canvas {
     position: fixed;
     inset: 0;
@@ -464,8 +464,6 @@ kbd {
     pointer-events: none;
 }
 .bg-layer {
-    --ox: 0px;
-    --oy: 0px;
     --scale: 1;
     --hue: 0deg;
     --glow: 1;
@@ -480,7 +478,7 @@ body[data-bg="grid"] .bg-layer {
         linear-gradient(rgba(88, 166, 255, 0.11) 1px, transparent 1px),
         linear-gradient(90deg, rgba(88, 166, 255, 0.11) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, calc(44px * var(--scale)) calc(44px * var(--scale)), calc(44px * var(--scale)) calc(44px * var(--scale));
-    background-position: 0 0, 0 0, var(--ox) var(--oy), var(--ox) var(--oy);
+    background-position: 0 0, 0 0, center, center;
 }
 
 /* CIRCUIT: 基板調の配線とランド */
@@ -490,7 +488,7 @@ body[data-bg="circuit"] .bg-layer {
         radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(3, 8, 6, 0.85) 100%),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2324a36b' stroke-opacity='.5' stroke-width='1.5'%3E%3Cpath d='M0 50h60l20 20h50l20-20h50'/%3E%3Cpath d='M50 0v30l20 20v60l-20 20v70'/%3E%3Cpath d='M0 150h40l20 20h60l20-20h60'/%3E%3Cpath d='M150 0v50M150 80v40l-20 20v60'/%3E%3Cpath d='M100 0v20l20 20M100 200v-20l-20-20v-40'/%3E%3Cpath d='M0 100h20M180 100h20'/%3E%3C/g%3E%3Cg fill='%2339ff14' fill-opacity='.55'%3E%3Ccircle cx='60' cy='50' r='3.5'/%3E%3Ccircle cx='150' cy='50' r='3.5'/%3E%3Ccircle cx='150' cy='80' r='3.5'/%3E%3Ccircle cx='50' cy='130' r='3.5'/%3E%3Ccircle cx='120' cy='40' r='3.5'/%3E%3Ccircle cx='80' cy='120' r='3.5'/%3E%3Ccircle cx='20' cy='100' r='3.5'/%3E%3Ccircle cx='180' cy='100' r='3.5'/%3E%3Ccircle cx='40' cy='150' r='3.5'/%3E%3C/g%3E%3Cg fill='none' stroke='%2324a36b' stroke-opacity='.45'%3E%3Crect x='92' y='84' width='36' height='24' rx='2'/%3E%3C/g%3E%3C/svg%3E");
     background-size: 100% 100%, calc(200px * var(--scale)) calc(200px * var(--scale));
-    background-position: 0 0, var(--ox) var(--oy);
+    background-position: 0 0, center;
 }
 
 /* CRT: ブラウン管の走査線 */
@@ -500,7 +498,107 @@ body[data-bg="crt"] .bg-layer {
         radial-gradient(ellipse at 50% 50%, rgba(0, 255, 204, 0.10), transparent 70%),
         repeating-linear-gradient(0deg, rgba(0, 255, 204, 0.07) 0, rgba(0, 255, 204, 0.07) 1px, transparent 1px, transparent 4px);
     background-size: 100% 100%, 100% calc(4px * var(--scale));
-    background-position: 0 0, 0 var(--oy);
+    background-position: 0 0, center;
+}
+
+/* --- 警告と、システムが止まる演出（script.js が body のクラスを切り替える） --- */
+/* 画面の縁を染める層。背景より手前、ゲームの枠より奥に置く */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* 持ち時間が残り少ない: 縁が橙に脈打ち、タイマーの色が変わり、背景がゆっくり鼓動する */
+body.danger::after {
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 140, 0, 0.55) 100%);
+    animation: alert-pulse 1s ease-in-out infinite;
+}
+body.danger #game-container { border-color: #ff9f1a; animation: alert-border 1s ease-in-out infinite; }
+body.danger #timer-display:not(.bonus):not(.penalty):not(.ending) { color: #ffb347; font-weight: bold; }
+body.danger .bg-layer { animation: bg-throb 1s ease-in-out infinite; }
+
+/* さらに少ない: 赤くなり、速く脈打ち、タイマーが点滅し、背景が小刻みに揺れる */
+body.critical::after {
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(255, 30, 30, 0.7) 100%);
+    animation-duration: 0.45s;
+}
+body.critical #game-container { border-color: var(--error-red); animation-duration: 0.45s; --alert-color: rgba(255, 68, 68, 0.75); }
+body.critical #timer-display:not(.bonus):not(.penalty):not(.ending) {
+    color: var(--error-red);
+    text-shadow: 0 0 14px rgba(255, 68, 68, 0.8);
+    animation: blink 0.45s steps(2, start) infinite;
+}
+body.critical .bg-layer { animation: bg-quake 0.3s linear infinite; }
+
+@keyframes alert-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes alert-border {
+    0%, 100% { box-shadow: 0 0 40px rgba(0, 0, 0, 0.8); }
+    50% { box-shadow: 0 0 34px var(--alert-color, rgba(255, 159, 26, 0.7)); }
+}
+@keyframes bg-throb { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes bg-quake {
+    0% { transform: translate(0, 0) scale(1.03); }
+    25% { transform: translate(-5px, 3px) scale(1.05); }
+    50% { transform: translate(4px, -4px) scale(1.03); }
+    75% { transform: translate(-3px, -2px) scale(1.06); }
+    100% { transform: translate(0, 0) scale(1.03); }
+}
+
+/* 時間切れ・ミスの上限: 画面が赤く明滅して、システムが止まる */
+body.system-halt::after {
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 0, 0, 0.16) 0, rgba(255, 0, 0, 0.16) 2px, transparent 2px, transparent 5px),
+        radial-gradient(ellipse at center, rgba(120, 0, 0, 0.35) 0%, rgba(255, 0, 0, 0.75) 100%);
+    animation: halt-flash 1.2s steps(1, end) forwards;
+}
+body.system-halt .bg-layer,
+body.system-down .bg-layer {
+    /* 模様の色を落として、暗い赤に沈める */
+    filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5) brightness(0.55);
+}
+body.system-halt .bg-canvas { opacity: 0; }
+body.system-halt #game-container {
+    border-color: #ff2222;
+    box-shadow: 0 0 60px rgba(255, 0, 0, 0.75);
+    animation: halt-glitch 0.5s steps(1, end) 2;
+}
+body.system-halt #word-display { animation: halt-fade 1s ease-out forwards; }
+body.system-halt #game-info { color: var(--error-red); }
+
+/* 結果画面: 止まったあとの、赤く沈んだ状態 */
+body.system-down::after {
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(160, 0, 0, 0.5) 100%);
+    opacity: 1;
+}
+body.system-down #game-container { border-color: #8b1a1a; box-shadow: 0 0 40px rgba(180, 0, 0, 0.45); }
+
+@keyframes halt-flash {
+    0% { opacity: 1; }
+    8% { opacity: 0.15; }
+    16% { opacity: 0.95; }
+    26% { opacity: 0.3; }
+    38% { opacity: 1; }
+    50% { opacity: 0.45; }
+    62% { opacity: 0.9; }
+    100% { opacity: 0.7; }
+}
+@keyframes halt-glitch {
+    0% { transform: translate(0, 0) skewX(0); }
+    15% { transform: translate(-7px, 2px) skewX(-2deg); }
+    30% { transform: translate(6px, -2px) skewX(1.5deg); }
+    45% { transform: translate(-3px, 1px) skewX(0); }
+    60% { transform: translate(4px, 0) skewX(-1deg); }
+    80% { transform: translate(-1px, 0) skewX(0); }
+    100% { transform: translate(0, 0) skewX(0); }
+}
+@keyframes halt-fade {
+    0% { opacity: 1; filter: none; }
+    30% { opacity: 0.5; filter: blur(1px) saturate(0); }
+    100% { opacity: 0.25; filter: saturate(0); }
 }
 
 .bg-btn {

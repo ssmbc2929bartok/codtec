@@ -414,6 +414,7 @@
     function goToMenu(message) {
         stopTimers();
         bgFx.stop();
+        setAlerts();
         game = null;
         phase = 'menu';
         pauseOverlay.hidden = true;
@@ -421,6 +422,26 @@
         renderMenu();
         menuMessage.textContent = message || '';
         show('menu');
+    }
+
+    // --- 画面全体の演出（body に付けるクラスで切り替える。見た目は codtec.css） ---
+    //   danger      : 持ち時間が残り少ない（DANGER_SECONDS 秒以下）
+    //   critical    : さらに少ない（CRITICAL_SECONDS 秒以下）
+    //   system-halt : 時間切れ・ミスの上限で終わった瞬間の、システムが止まる演出
+    //   system-down : そのあとの結果画面（赤く沈んだまま）
+    const DANGER_SECONDS = 10;
+    const CRITICAL_SECONDS = 5;
+    const ALERT_CLASSES = ['danger', 'critical', 'system-halt', 'system-down'];
+
+    function setAlerts(...names) {
+        ALERT_CLASSES.forEach(name => document.body.classList.toggle(name, names.includes(name)));
+    }
+
+    // 残り時間に合わせて、警告の強さを切り替える
+    function updateDanger(remaining) {
+        if (remaining <= CRITICAL_SECONDS) setAlerts('danger', 'critical');
+        else if (remaining <= DANGER_SECONDS) setAlerts('danger');
+        else setAlerts();
     }
 
     // --- ゲームの進行 ---
@@ -453,6 +474,7 @@
 
         stopTimers();
         bgFx.stop();
+        setAlerts();
         game = {
             sel: { ...selection, lang: recordLang(), course: activeCourse() }, // 記録には、実際に出題した言語とコースを使う
             langData,
@@ -646,6 +668,7 @@
         if (game.rules.seconds) {
             const remaining = Math.max(0, timeAllowed() - elapsed);
             timerDisplay.textContent = `REMAINING: ${remaining.toFixed(2)}s`;
+            if (phase === 'playing') updateDanger(remaining);
             if (remaining <= 0 && phase === 'playing') showEnding('timeup');
         } else {
             timerDisplay.textContent = `TIME: ${elapsed.toFixed(2)}s`;
@@ -663,6 +686,7 @@
         updateTimer();
         pauseOverlay.hidden = false; // 問題文はオーバーレイで隠れる
         bgFx.pause();
+        setAlerts(); // 一時停止の間は警告を出さない（再開するとタイマーが付け直す）
         gameScreen.classList.add('paused');
     }
 
@@ -783,6 +807,9 @@
         clearInterval(timerInterval);
         timerInterval = null;
         updateProgress();
+        // 時間切れとミスの上限では、画面が赤くなってシステムが止まる演出を出す
+        if (kind === 'finish') setAlerts();
+        else { setAlerts('system-halt'); bgFx.pause(); }
         timerDisplay.className = `ending ${kind}`;
         timerDisplay.textContent = ending.title;
         noteDisplay.className = kind === 'dead' ? 'warn' : 'ending-note';
@@ -885,6 +912,7 @@
         phase = 'result';
         stopTimers();
         bgFx.pause(); // 結果画面では、最後の見た目のまま動きを止める
+        setAlerts(...(g.endKind && g.endKind !== 'finish' ? ['system-down'] : []));
 
         // 打ちかけで終わった問題も振り返りに入れる
         const unfinished = g.target && g.charIdx < g.target.text.length && (g.charIdx > 0 || g.wordMiss > 0);
