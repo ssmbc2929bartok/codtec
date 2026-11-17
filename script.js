@@ -506,6 +506,7 @@
         };
         pauseOverlay.hidden = true;
         gameScreen.classList.remove('paused');
+        gameScreen.classList.toggle('has-toast', Boolean(game.mode.milestone)); // 知らせを出す場所を空ける
         hideToast();
         noteDisplay.textContent = '';
         noteDisplay.className = '';

@@ -236,10 +236,12 @@ kbd {
 }
 #course-tag { display: block; margin-bottom: 6px; font-size: 1rem; }
 
-/* 区切りの知らせ。枠の上の縁にまたがる位置に出すので、ほかの表示とは重ならない */
+/* 区切りの知らせ。タイマーのすぐ下に出す。知らせのあるモードでは、そのぶんの場所を先に空けておくので、
+   出たり消えたりしてもほかの表示は動かない */
+#game-screen.has-toast { padding-bottom: 60px; }
 .toast {
     position: absolute;
-    top: -42px;
+    bottom: 6px;
     left: 50%;
     transform: translateX(-50%);
     padding: 8px 20px;
