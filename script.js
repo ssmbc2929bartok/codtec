@@ -25,7 +25,7 @@
     //   lives   : ミスがこの回数に達したら終了
     // score は記録の種類（'time' は短いほど良い時間、'words' は多いほど良い問題数、'none' は記録なし）。
     // milestone を付けたモードでは、その問題数をクリアするごとに短い知らせを出す。
-    // short は X のシェア文面に書く短い名前。color はメニューの枠線と結果のスコアに使う色。
+    // short は、メニューのボタンと X のシェア文面に書く短い名前。color はメニューの枠線と結果のスコアに使う色。
     // MARATHON のミスのペナルティ。start 問クリアしたら base 秒になり、
     // そのあとは every 問クリアするごとに増える（増える量は、何問目までかで steps から選ぶ）。
     //   10 問: 0.1 秒 → 20〜50 問: +0.1 秒ずつ → 60〜100 問: +0.2 秒ずつ → 110 問以降: +0.3 秒ずつ
@@ -328,12 +328,14 @@
         const modeBox = $('mode-selector');
         modeBox.textContent = '';
         MODES.forEach((m, i) => {
-            const chip = makeChip(`${i + 1}. ${m.label}`, null, m.id === selection.mode, () => select({ mode: m.id }), 'mode');
+            // 7 つを 1 行に収めるため、ボタンには短い名前を書く（正式な名前は下の説明と結果画面に出る）
+            const chip = makeChip(`${i + 1}. ${m.short}`, null, m.id === selection.mode, () => select({ mode: m.id }), 'mode');
+            chip.title = m.label;
             chip.style.setProperty('--course', m.color);
             modeBox.appendChild(chip);
         });
         const mode = getMode(selection.mode);
-        $('mode-desc').textContent = mode.desc;
+        $('mode-desc').textContent = `${mode.label}: ${mode.desc}`;
 
         // 入力のしかた
         const inputBox = $('input-selector');

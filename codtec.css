@@ -96,6 +96,10 @@ kbd {
 .chip.picked::before { content: '\2713'; margin-right: 6px; color: var(--accent-cyan); }
 .review-lang { color: var(--accent-blue); }
 .group-chips, .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+/* モードは 7 つを 1 行に並べるので、ボタンを少し詰める（幅が足りない画面では折り返す） */
+#mode-selector { gap: 4px; }
+#mode-selector .chip { padding: 4px 7px; font-size: 0.75rem; }
+#mode-selector .chip[data-course]::before { margin-right: 5px; }
 .chip-row { justify-content: center; }
 
 .chip {
