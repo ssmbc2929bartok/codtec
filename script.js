@@ -424,6 +424,11 @@
         show('menu');
     }
 
+    // 演出を出すモード。この 2 つだけ、進むにつれて背景がワープし（PLAIN 以外）、
+    // 残り時間の警告と、時間切れ・失敗のシステム停止の演出が出る
+    const FX_MODES = ['marathon', 'sudden-death'];
+    const hasFx = () => Boolean(game) && FX_MODES.includes(game.mode.id);
+
     // --- 画面全体の演出（body に付けるクラスで切り替える。見た目は codtec.css） ---
     //   danger      : 持ち時間が残り少ない（DANGER_SECONDS 秒以下）
     //   critical    : さらに少ない（CRITICAL_SECONDS 秒以下）
@@ -446,8 +451,6 @@
 
     // --- ゲームの進行 ---
 
-    // 問題数が進むにつれて背景が変化するモード（背景が PLAIN のときは変化しない）
-    const WARP_MODES = ['marathon', 'sudden-death'];
     const bgFx = window.CodtecBg || { start() {}, setLevel() {}, pause() {}, resume() {}, stop() {} };
 
     function stopTimers() {
@@ -529,7 +532,7 @@
     function beginPlay() {
         phase = 'playing';
         wordDisplay.className = '';
-        if (WARP_MODES.includes(game.mode.id)) bgFx.start();
+        if (hasFx()) bgFx.start();
         setNextWord();
         game.segmentStart = performance.now();
         timerInterval = setInterval(updateTimer, 30);
@@ -668,7 +671,7 @@
         if (game.rules.seconds) {
             const remaining = Math.max(0, timeAllowed() - elapsed);
             timerDisplay.textContent = `REMAINING: ${remaining.toFixed(2)}s`;
-            if (phase === 'playing') updateDanger(remaining);
+            if (phase === 'playing' && hasFx()) updateDanger(remaining);
             if (remaining <= 0 && phase === 'playing') showEnding('timeup');
         } else {
             timerDisplay.textContent = `TIME: ${elapsed.toFixed(2)}s`;
@@ -807,9 +810,9 @@
         clearInterval(timerInterval);
         timerInterval = null;
         updateProgress();
-        // 時間切れとミスの上限では、画面が赤くなってシステムが止まる演出を出す
-        if (kind === 'finish') setAlerts();
-        else { setAlerts('system-halt'); bgFx.pause(); }
+        // 演出を出すモードでは、時間切れとミスの上限で、画面が赤くなってシステムが止まる演出を出す
+        if (kind !== 'finish' && hasFx()) { setAlerts('system-halt'); bgFx.pause(); }
+        else setAlerts();
         timerDisplay.className = `ending ${kind}`;
         timerDisplay.textContent = ending.title;
         noteDisplay.className = kind === 'dead' ? 'warn' : 'ending-note';
@@ -912,7 +915,7 @@
         phase = 'result';
         stopTimers();
         bgFx.pause(); // 結果画面では、最後の見た目のまま動きを止める
-        setAlerts(...(g.endKind && g.endKind !== 'finish' ? ['system-down'] : []));
+        setAlerts(...(g.endKind && g.endKind !== 'finish' && FX_MODES.includes(g.mode.id) ? ['system-down'] : []));
 
         // 打ちかけで終わった問題も振り返りに入れる
         const unfinished = g.target && g.charIdx < g.target.text.length && (g.charIdx > 0 || g.wordMiss > 0);

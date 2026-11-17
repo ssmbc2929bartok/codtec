@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://ssmbc2929bartok.github.io/codtec/ogp.png">
     <meta name="twitter:image:alt" content="紺色の背景に、青い文字で「&gt; CODTEC_」と書かれた Codtec のロゴ">
     <!-- ?v= は node tools/release.mjs <番号> で index.html と一緒に書き換える -->
-    <link rel="stylesheet" href="codtec.css?v=2.7.1">
+    <link rel="stylesheet" href="codtec.css?v=2.7.2">
 </head>
 <body class="doc-page">
     <div class="bg-layer" aria-hidden="true"></div>
@@ -173,11 +173,11 @@
 
             <section>
                 <h2>10. 警告と停止の演出</h2>
+                <p>MARATHON と SUDDEN DEATH だけで出る演出です。ほかのモードと CUSTOM では出ません。</p>
                 <ul>
-                    <li>持ち時間のあるモードで残りが 10 秒以下になると、画面の縁が橙に脈打ち、タイマーの色が変わり、背景がゆっくり鼓動します。</li>
+                    <li>MARATHON で残りが 10 秒以下になると、画面の縁が橙に脈打ち、タイマーの色が変わり、背景がゆっくり鼓動します。</li>
                     <li>残りが 5 秒以下になると、縁とタイマーが赤くなって点滅し、背景が小刻みに揺れます。問題をクリアして時間が増えると、警告は消えます。</li>
-                    <li>時間切れになったときと、ミスの上限に達したときは、画面が赤く明滅してシステムが止まる演出が出ます。結果画面も、赤く沈んだままになります。</li>
-                    <li>決めた問題数を打ち切って終わったとき（FINISH!）は、この演出は出ません。</li>
+                    <li>MARATHON で時間切れになったときと、SUDDEN DEATH でミスしたときは、画面が赤く明滅してシステムが止まる演出が出ます。結果画面も、赤く沈んだままになります。</li>
                 </ul>
             </section>
 
@@ -190,6 +190,6 @@
             <a href="https://github.com/ssmbc2929bartok/codtec" target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
     </div>
-    <script src="theme.js?v=2.7.1"></script>
+    <script src="theme.js?v=2.7.2"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ Terminal-Style Typing Game
 
 プログラマーやエンジニアのために設計された、ターミナル風の Web タイピングゲームです。実際のコードやコマンドを打って練習できます。
 
-現在のバージョンは v2.7.1 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
+現在のバージョンは v2.7.2 です。変更の内容は [CHANGELOG.md](CHANGELOG.md) にあります。
 
 ## 🚀 Live Demo
 
@@ -69,7 +69,7 @@ https://ssmbc2929bartok.github.io/codtec/
 - 結果画面での振り返り（プレイした問題のコース、ミス回数、解説）
 - 言語・コース・モードごとの自己ベストの保存
 - 選べる背景（PLAIN / GRID / CIRCUIT / CRT）。MARATHON と SUDDEN DEATH では、10 問ごとにワープして、模様の細かさと色が変わっていく
-- 持ち時間が残り少ないときの警告と、時間切れ・失敗のときにシステムが止まる演出
+- MARATHON と SUDDEN DEATH では、持ち時間が残り少ないときの警告と、時間切れ・失敗のときにシステムが止まる演出が出る
 - 結果を X でシェア
 
 ## 🛠 操作方法
@@ -119,7 +119,7 @@ main ブランチにプッシュすると、GitHub Pages が https://ssmbc2929ba
 公開する変更をコミットする前に、新しいバージョン番号で次を実行します。画面のバージョン表記と、CSS や JS を読み込む URL の印（`?v=`）がまとめて書き換わります。
 
 ```bash
-node tools/release.mjs 2.7.2
+node tools/release.mjs 2.7.3
 ```
 
 この印が前と同じままだと、ブラウザが古い CSS や JS を使い続けて、更新が反映されないことがあります。
