@@ -84,7 +84,7 @@ lambda x: x * 2  ※ 無名関数
 first, *rest = items  ※ 先頭と残りに分けて受け取る
 def f(*args, **kwargs):  ※ 任意個の位置引数とキーワード引数を受け取る
 s[::-1]  ※ スライスで逆順にする
-try: ... except ValueError as e:  ※ 例外を種類を指定して捕まえる
+try: ... except ValueError as e:  ※ 例外を種類を指定して捕まえる。実際は try と except を別の行に書く
 {k: v for k, v in d.items() if v}  ※ 辞書内包表記
 if (n := len(data)) > 10:  ※ セイウチ演算子
 x if cond else y  ※ 条件式（三項演算子にあたる）

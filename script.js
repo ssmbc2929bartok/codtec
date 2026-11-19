@@ -117,10 +117,12 @@
 
     // phase: 'loading' | 'menu' | 'countdown' | 'playing' | 'paused' | 'ending' | 'result'
     let phase = 'loading';
-    // 入力のしかた。editor では、開きの括弧や引用符を打つと、対応する閉じ側が自動で入る
+    // 入力のしかた。editor では、開きの括弧や引用符を打つと、対応する閉じ側が自動で入る。
+    // editor-space では、さらに、開きのすぐ後ろに空白がある対で、閉じ側の手前の空白も自動で入る
     const INPUTS = [
         { id: 'normal', label: 'NORMAL', desc: '表示されたとおりに、すべての文字を自分で打つ' },
-        { id: 'editor', label: 'EDITOR', desc: '( [ { " \' ` を打つと、対応する閉じ側が自動で入る。記録は NORMAL と別に保存する' },
+        { id: 'editor', label: 'EDITOR', short: 'EDITOR', desc: '( [ { " \' ` を打つと、対応する閉じ側が自動で入る。記録は NORMAL と別に保存する' },
+        { id: 'editor-space', label: 'EDITOR + FILL SPACE', short: 'EDITOR+SPACE', desc: 'EDITOR に加えて、{ x } のような括弧の内側の、閉じ側の空白も自動で入る。記録は別に保存する' },
     ];
 
     let selection = { lang: 'cpp', course: 'all', mode: 'time-trial', input: 'normal', custom: { ...CUSTOM_DEFAULT } };
@@ -145,7 +147,7 @@
         const base = sel.course === 'all'
             ? `best_${sel.lang}_${sel.mode}`
             : `best_${sel.lang}_${sel.course}_${sel.mode}`;
-        return sel.input === 'editor' ? `${base}_editor` : base;
+        return sel.input && sel.input !== 'normal' ? `${base}_${sel.input}` : base;
     }
 
     function readBest(sel) {
@@ -487,7 +489,9 @@
             dead: false,     // ミスの上限で終わったか
             penaltyTotal: 0, // ミスで減った持ち時間の合計（秒）
             bonusTotal: 0,   // クリアして増えた持ち時間の合計（秒）
-            editor: selection.input === 'editor',
+            editor: selection.input !== 'normal',
+            fillSpace: selection.input === 'editor-space',
+            inputName: INPUTS.find(i => i.id === selection.input).short || '',
             pairs: {},       // いまの問題の、開きの位置 → 閉じの位置
             autoFilled: new Set(),
             typeOver: [],    // 飛び越えた閉じ側の文字（打ち直されたら見逃す）
@@ -600,7 +604,7 @@
     function updateProgress() {
         const { rules } = game;
         const parts = [game.langData.name];
-        if (game.editor) parts.push('EDITOR');
+        if (game.editor) parts.push(game.inputName);
         parts.push(rules.words
             ? `PROGRESS: ${Math.min(game.wordIdx + 1, rules.words)} / ${rules.words}`
             : `WORDS CLEARED: ${game.wordIdx}`);
@@ -728,13 +732,20 @@
 
         if (e.key === target[game.charIdx]) {
             game.totalTyped++;
-            game.typeOver = []; // 先へ進んだので、打ち直しの見逃しは終わり
+            // 先へ進んだので、打ち直しの見逃しは終わり。ただし空白のときは残す。
+            // 「} = x」のように飛び越えた先が空白だと、打ち直しの空白と区別がつかないため
+            if (e.key !== ' ') game.typeOver = [];
             span.className = 'cleared';
 
             // エディタモード: 開きを打ったら、対応する閉じ側を入力済みにする
             const close = game.pairs[game.charIdx];
             if (close !== undefined) {
                 game.autoFilled.add(close);
+                // EDITOR + FILL SPACE: 「{ x }」のように開きのすぐ後ろが空白の対では、閉じ側の手前の空白も入力済みにする
+                if (game.fillSpace && target[game.charIdx + 1] === ' ' && target[close - 1] === ' ' && close - 1 > game.charIdx + 1) {
+                    game.autoFilled.add(close - 1);
+                    game.spans[close - 1].className = 'auto';
+                }
                 game.spans[close].className = 'auto';
             }
             game.charIdx++;
@@ -762,14 +773,16 @@
             return;
         }
 
-        // スペースが不要な場所でのスペースはミスに数えない
-        if (e.key === ' ') return;
-
-        // エディタモード: 自動で入った閉じ側を、いつもの癖で打ち直したぶんは見逃す
-        if (game.typeOver.length > 0 && e.key === game.typeOver[0]) {
-            game.typeOver.shift();
+        // エディタモード: 自動で入った閉じ側や空白を、いつもの癖で打ち直したぶんは見逃す。
+        // 飛び越えた文字の途中から打ち直しても合うように、その文字までをまとめて消す
+        const typedOver = game.typeOver.indexOf(e.key);
+        if (typedOver !== -1) {
+            game.typeOver.splice(0, typedOver + 1);
             return;
         }
+
+        // スペースが不要な場所でのスペースはミスに数えない
+        if (e.key === ' ') return;
 
         game.missCount++;
         game.wordMiss++;
@@ -881,7 +894,7 @@
         else if (e.key === 'ArrowDown') { e.preventDefault(); select({ coursePick: false, course: step(availableCourses(lang), courseCursor, 1) }); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); select({ coursePick: false, course: step(availableCourses(lang), courseCursor, -1) }); }
         else if (/^[1-9]$/.test(e.key) && MODES[Number(e.key) - 1]) select({ mode: MODES[Number(e.key) - 1].id });
-        else if (e.key.toLowerCase() === 'e') select({ input: selection.input === 'editor' ? 'normal' : 'editor' });
+        else if (e.key.toLowerCase() === 'e') select({ input: step(INPUTS.map(i => i.id), selection.input, 1) }); // E を押すたびに次の入力のしかたへ
     }
 
     // 別のタブやウィンドウに移ったら自動で一時停止する
@@ -978,27 +991,36 @@
             : `${g.missCount} ${g.missCount === 1 ? 'case' : 'cases'} detected.`;
         const exitText = g.endKind ? ENDINGS[g.endKind].title.replace('!', '') : 'FINISH';
 
-        // X の上限（280 文字。URL は 23 文字と数えられる）を超えるときは、後ろの行から省く
+        // X の上限（280 文字。URL は 23 文字と数えられる）を超えるときは、決めた順に行を省く
+        // MODE（入力のしかたを含む）と RESULT は、記録の区別に要るので最後まで残す
         // 全言語・全コースから出すと決まっているモードでは、言語とコースの行を書かない
         // 代わりに、時間切れまで生き残った長さを書く
         const fixedPool = MIX_ONLY_MODES.includes(g.mode.id);
         const minutes = Math.floor(finalTime / 60);
         const survived = minutes > 0 ? `${minutes}m ${Math.floor(finalTime % 60)}s` : `${Math.floor(finalTime)}s`;
-        const lines = [
-            '[CODTEC_REPORT]',
-            ...(fixedPool ? [] : [`>> LANG: ${shareBase}`, `>> COURSE: ${shareCourse}`]),
-            `>> MODE: ${modeText}`,
-            ...(g.editor ? ['>> INPUT: EDITOR'] : []),
-            `>> RESULT: ${scoreText}${isNewRecord ? ' [NEW]' : ''}`,
-            ...(fixedPool ? [`>> TIME: ${survived}`] : []),
-            `>> KPM: ${kpm} / ACC: ${accuracy}%`,
-            `>> ERR_LOG: ${errLog}`,
-            `>> EXIT: ${exitText}`,
+        // 入力のしかたは MODE の行に付ける（NORMAL のときは何も付けない）
+        const shareMode = g.editor ? `${modeText} / ${g.inputName}` : modeText;
+        const shareLines = [
+            { key: 'head', text: '[CODTEC_REPORT]' },
+            ...(fixedPool ? [] : [{ key: 'lang', text: `>> LANG: ${shareBase}` }, { key: 'course', text: `>> COURSE: ${shareCourse}` }]),
+            { key: 'mode', text: `>> MODE: ${shareMode}` },
+            { key: 'result', text: `>> RESULT: ${scoreText}${isNewRecord ? ' [NEW]' : ''}` },
+            ...(fixedPool ? [{ key: 'time', text: `>> TIME: ${survived}` }] : []),
+            { key: 'kpm', text: `>> KPM: ${kpm} / ACC: ${accuracy}%` },
+            { key: 'err', text: `>> ERR_LOG: ${errLog}` },
+            { key: 'exit', text: `>> EXIT: ${exitText}` },
         ];
-        const tweetLength = () => lines.join('\n').length + '\n\n#codtec\n'.length + 23;
-        while (tweetLength() > 280 && lines.length > 4) lines.pop();
+        // 省く順。EXIT、ERR_LOG、KPM / ACC の順で、それでも収まらないときだけ TIME、COURSE、LANG も省く
+        const dropOrder = ['exit', 'err', 'kpm', 'time', 'course', 'lang'];
+        const shareBody = () => shareLines.map(line => line.text).join('\n');
+        const tweetLength = () => shareBody().length + '\n\n#codtec\n'.length + 23;
+        for (const key of dropOrder) {
+            if (tweetLength() <= 280) break;
+            const at = shareLines.findIndex(line => line.key === key);
+            if (at >= 0) shareLines.splice(at, 1);
+        }
         // ハッシュタグは文面に書く。hashtags= で渡すと URL のうしろに付いてしまう
-        const shareText = `${lines.join('\n')}\n\n#codtec\n${SITE_URL}`;
+        const shareText = `${shareBody()}\n\n#codtec\n${SITE_URL}`;
         const xLink = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
 
         resultScreen.innerHTML = `
@@ -1029,7 +1051,7 @@
                 <a class="btn-ghost" href="${PORTAL_URL}">ポータルに戻る</a>
             </div>
         `;
-        resultScreen.querySelector('.result-context').textContent = `${langText} / ${g.mode.label}${g.editor ? ' / EDITOR' : ''}`;
+        resultScreen.querySelector('.result-context').textContent = `${langText} / ${g.mode.label}${g.editor ? ` / ${g.inputName}` : ''}`;
         resultScreen.querySelector('.result-best').textContent = bestText;
         renderReview(g.history, g.mixed);
         show('result');

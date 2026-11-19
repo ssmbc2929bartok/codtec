@@ -101,7 +101,7 @@ errors.Is(err, os.ErrNotExist)  ※ 包まれたエラーの中身を調べる
 var wg sync.WaitGroup  ※ 複数のゴルーチンの終了を待つ
 func(w http.ResponseWriter, r *http.Request)  ※ HTTP ハンドラの決まった形
 switch v := x.(type) {  ※ 型スイッチ。インターフェースの実際の型で分岐
-const ( A = iota )  ※ iota で連番の定数を作る
+Sunday Weekday = iota  ※ iota で連番の定数を作る。const ( ) の中の最初の行に書く
 Name string \`json:"name,omitempty"\`  ※ 構造体タグ
 if v, err := f(); err != nil {  ※ if の中で代入と判定をまとめて書く
 _ = x  ※ 値を捨てる。未使用エラーを避ける書き方

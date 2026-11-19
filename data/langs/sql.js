@@ -54,9 +54,9 @@ STRING_AGG(name, ', ')  ※ グループ内の文字列をつなげる（Postgre
 GROUP_CONCAT(name)  ※ グループ内の文字列をつなげる（MySQL）
 ARRAY_AGG(id ORDER BY id)  ※ グループ内の値を配列にまとめる
 JSON_EXTRACT(data, '$.name')  ※ JSON から値を取り出す
-INT, BIGINT, DECIMAL(10, 2)  ※ 数値の型。金額には DECIMAL を使う
-VARCHAR(255), TEXT  ※ 文字列の型
-DATE, TIMESTAMP  ※ 日付と日時の型
+price DECIMAL(10, 2) NOT NULL  ※ 桁数を決めた数値の型。金額には DECIMAL を使う
+body TEXT NOT NULL  ※ 長さを決めない文字列の型
+created_at TIMESTAMP NOT NULL  ※ 日時の型。日付だけなら DATE を使う
 BOOLEAN DEFAULT FALSE  ※ 真偽値の型と既定値
 CHECK (price >= 0)  ※ 値の条件を決める制約
 WHERE name ILIKE '%alice%'  ※ 大文字小文字を区別しない部分一致（PostgreSQL）
@@ -82,7 +82,7 @@ CASE WHEN age < 20 THEN 'minor' ELSE 'adult' END  ※ 条件分岐の式
 COALESCE(nickname, name)  ※ 最初の NULL でない値を返す
 WHERE EXISTS (SELECT 1 FROM orders)  ※ 副問い合わせに行があるかで絞る
 UNION ALL  ※ 2 つの結果を重複を残してつなげる
-BEGIN; COMMIT;  ※ トランザクション。まとめて確定する
+BEGIN TRANSACTION;  ※ トランザクションを始める。COMMIT で確定、ROLLBACK で取り消す
 DEFAULT CURRENT_TIMESTAMP  ※ 既定値を現在の日時にする
 
 @@ advanced
@@ -93,7 +93,7 @@ LAG(price) OVER (ORDER BY day)  ※ 1 つ前の行の値を参照する
 WITH RECURSIVE tree AS (  ※ 再帰 CTE。階層や木構造をたどる
 EXPLAIN ANALYZE SELECT * FROM users;  ※ 実行計画と実際の時間を調べる
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name  ※ あれば更新、なければ追加（UPSERT）
-SELECT ... FOR UPDATE SKIP LOCKED  ※ 行をロックし、ロック済みは飛ばす。ジョブキューで使う
+SELECT * FROM jobs FOR UPDATE SKIP LOCKED  ※ 行をロックし、ロック済みは飛ばす。ジョブキューで使う
 CREATE VIEW active_users AS  ※ ビュー。問い合わせに名前を付けて保存する
 ROLLBACK TO SAVEPOINT sp1;  ※ トランザクションの途中まで戻す
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;  ※ 分離レベルを最も厳しくする

@@ -99,7 +99,7 @@ async function load() {  ※ 非同期関数。Promise を返す
 const res = await fetch(url);  ※ HTTP リクエストの完了を待つ
 await Promise.all(tasks);  ※ 複数の非同期処理を並行に実行して全部待つ
 new Promise((resolve, reject) => {});  ※ Promise を自分で作る
-try { } catch (err) { } finally { }  ※ 例外処理。finally は必ず実行される
+try {} catch (err) {} finally {}  ※ 例外処理。finally は必ず実行される
 function* gen() { yield 1; }  ※ ジェネレータ関数
 for await (const chunk of stream) {  ※ 非同期に届く値を順に受け取る
 class Foo extends Bar { #secret = 1; }  ※ 継承と、# で始まる非公開フィールド

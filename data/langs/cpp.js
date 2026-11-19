@@ -42,7 +42,7 @@ pq.emplace(dist, v);  ※ 要素をその場で構築して入れる
 std::deque<int> dq;  ※ 両端で出し入れできるキュー
 dq.push_front(x);  ※ 先頭に追加する
 dq.pop_back();  ※ 末尾を取り除く
-dq.front() + dq.back()  ※ 先頭と末尾の要素を見る
+dq.back()  ※ 末尾の要素を見る。先頭は front()
 std::set<int> s;  ※ 重複なしで昇順に並ぶ集合（平衡二分木）
 s.insert(x);  ※ 集合に追加。O(log n)
 s.erase(x);  ※ 値を指定して削除する

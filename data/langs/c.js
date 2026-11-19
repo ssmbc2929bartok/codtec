@@ -53,8 +53,10 @@ realloc(p, new_size)  ※ 確保したメモリの大きさを変える
 memmove(dst, src, n);  ※ 領域が重なっていても安全なコピー
 memcmp(a, b, n) == 0  ※ メモリの内容が等しいか
 abs(x)  ※ int の絶対値
-sqrt(x) + pow(x, 2.0)  ※ 平方根とべき乗
-floor(x) + ceil(x)  ※ 切り捨てと切り上げ
+sqrt(x * x + y * y)  ※ 平方根。2 点間の距離の計算でよく使う
+floor(x + 0.5)  ※ 切り捨て。0.5 を足して四捨五入にする定番
+pow(2.0, 10.0)  ※ べき乗。2 の 10 乗
+ceil(n / 10.0)  ※ 切り上げ。ページ数の計算でよく使う
 fabs(a - b) < 1e-9  ※ 浮動小数点数が等しいかの判定
 rand() % 6 + 1  ※ 1 から 6 の乱数。サイコロ
 srand(time(NULL));  ※ 乱数の種を現在時刻で初期化する
@@ -101,7 +103,7 @@ __attribute__((packed))  ※ 構造体の詰め物をなくす GCC 拡張
 fprintf(stderr, "%s\n", strerror(errno));  ※ エラー番号を文章にして標準エラーへ出す
 union { float f; uint32_t u; } v;  ※ 共用体。同じメモリを別の型として読む
 x & (1u << n)  ※ n 番目のビットが立っているかを調べる
-do { } while (0)  ※ マクロを 1 文として扱わせる定番
+do {} while (0)  ※ マクロを 1 文として扱わせる定番
 va_start(ap, fmt);  ※ 可変長引数の読み取りを始める
 _Static_assert(sizeof(int) == 4, "int");  ※ コンパイル時に条件を検査する（C11）
 goto cleanup;  ※ 後始末の場所へ飛ぶ。エラー処理でよく使う

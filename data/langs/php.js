@@ -98,7 +98,7 @@ abstract public function handle(): void;  ※ 抽象メソッド。子クラス�
 trait Loggable {  ※ トレイト。メソッドをクラスに混ぜ込む
 static::create()  ※ 遅延静的束縛
 function gen() { yield 1; yield 2; }  ※ ジェネレータ。値を 1 つずつ返す
-try { } catch (PDOException $e) { }  ※ データベースの例外を捕まえる
+try {} catch (PDOException $e) {}  ※ データベースの例外を捕まえる
 #[Route("/users", methods: ["GET"])]  ※ アトリビュート。Symfony のルーティング
 array_filter($a, fn($v) => $v > 0)  ※ 条件に合う要素だけ残す
 public function __get(string $key)  ※ 存在しないプロパティの読み取りを受ける

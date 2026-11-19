@@ -92,7 +92,7 @@ System.exit(1);  ※ 終了コードを指定して終わる
 @Override  ※ 親のメソッドを上書きしていることを示す注釈
 public interface Runnable {  ※ インターフェース。実装すべきメソッドの約束
 extends Thread implements Serializable  ※ 継承は 1 つ、インターフェースは複数実装できる
-try { } catch (IOException e) { }  ※ 例外処理。検査例外は捕まえるか宣言が必要
+try {} catch (IOException e) {}  ※ 例外処理。検査例外は捕まえるか宣言が必要
 throw new IllegalArgumentException(msg);  ※ 引数が不正なときに投げる定番の例外
 try (var in = new FileReader(path)) {  ※ try-with-resources
 public String toString() {  ※ 文字列表現を返す。出力やデバッグで使われる

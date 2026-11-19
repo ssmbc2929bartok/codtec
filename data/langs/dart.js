@@ -127,7 +127,7 @@ final (x, y) = point;  ※ レコードを分解して受け取る（Dart 3）
 T first<T extends Comparable<T>>(List<T> xs)  ※ 上限つきのジェネリクス
 Isolate.run(() => heavyWork());  ※ 別のアイソレートで重い処理を走らせる
 covariant Animal other  ※ 引数の型をサブクラスで狭めることを許す
-try { } on FormatException catch (e) { }  ※ 例外の型を指定して捕まえる
+try {} on FormatException catch (e) {}  ※ 例外の型を指定して捕まえる
 await Future.wait([a(), b()]);  ※ 複数の非同期処理をまとめて待つ
 operator ==(Object other)  ※ 等値演算子の定義。hashCode もそろえる
 static const instance = Config._();  ※ 非公開コンストラクタで作るシングルトン

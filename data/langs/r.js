@@ -93,7 +93,7 @@ l <- list(name = "Alice", scores = c(90, 80))  ※ リスト。型の違う値�
 l[["name"]]  ※ リストの要素そのものを取り出す
 apply(m, 1, sum)  ※ 行列の行ごとに関数を当てる
 factor(c("low", "high"), levels = c("low", "high"))  ※ 因子。カテゴリと順序を持つ
-nrow(df); ncol(df)  ※ 行数と列数
+nrow(df)  ※ 行数。列数は ncol(df)
 ifelse(x > 0, "pos", "neg")  ※ ベクトルに効く条件分岐
 set.seed(42)  ※ 乱数の種を固定して結果を再現できるようにする
 

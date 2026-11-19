@@ -66,7 +66,7 @@ Codtec.register({
 <style>body { margin: 0; }</style>  ※ HTML の中に CSS を書く
 
 @@ features
-<header> <nav> <main> <footer>  ※ 意味を持つ要素で骨組みを作る
+<header><nav></nav></header>  ※ 意味を持つ要素で骨組みを作る。ここではヘッダーの中にナビゲーション
 <section aria-labelledby="title">  ※ 見出しを持つ内容のまとまり
 <article>  ※ それだけで完結する内容。記事や投稿
 <form action="/login" method="post">  ※ 入力を送信するフォーム

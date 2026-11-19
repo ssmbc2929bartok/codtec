@@ -11,7 +11,7 @@ add x y = x + y  ※ 関数の定義。引数は空白で区切る
 let xs = [1, 2, 3]  ※ リスト。同じ型の値の並び
 if x > 0 then "pos" else "neg"  ※ if は式。else を省略できない
 import Data.List (sort)  ※ モジュールから名前を指定して読み込む
-print (sum [1 .. 100])  ※ 1 から 100 の合計を表示する
+print (sum [1..100])  ※ 1 から 100 の合計を表示する
 module Main where  ※ モジュールの宣言
 x <- getLine  ※ do の中で入力を 1 行読んで束縛する
 double x = x * 2  ※ 引数 1 つの関数
@@ -21,13 +21,13 @@ True && not False  ※ 論理演算
 
 @@ stdlib
 map (* 2) xs  ※ 各要素に関数を当てる。(* 2) はセクション
-filter even [1 .. 10]  ※ 条件に合う要素だけ残す
+filter even [1..10]  ※ 条件に合う要素だけ残す
 length xs  ※ リストの長さ。O(n)
 head xs : tail xs  ※ 先頭と残り。: は先頭に付け足す
 zip xs ys  ※ 2 つのリストを組にする
 foldr (+) 0 xs  ※ 右からの畳み込み。ここでは合計
 sum xs  ※ 合計
-product [1 .. 5]  ※ 積。5 の階乗
+product [1..5]  ※ 積。5 の階乗
 maximum xs  ※ 最大値
 reverse xs  ※ 逆順にする
 last xs  ※ 末尾の要素
@@ -77,7 +77,7 @@ M.insert key value m  ※ 追加した新しい Map を返す。元は変わら�
 S.member x set  ※ Set に含まれているか。S は Data.Set に付けた別名
 
 @@ features
-[x * x | x <- [1 .. 10], even x]  ※ リスト内包表記
+[x * x | x <- [1..10], even x]  ※ リスト内包表記
 data Maybe a = Nothing | Just a  ※ 値がないかもしれないことを表す型
 case xs of [] -> 0; (x : _) -> x  ※ パターンマッチ
 \x -> x + 1  ※ ラムダ式
@@ -94,7 +94,7 @@ abs' x | x < 0 = -x | otherwise = x  ※ ガード
 let (q, r) = divMod 7 2  ※ 組をパターンで分解して受け取る
 flip div 2 10  ※ 引数の順序を入れ替える
 map (\(a, b) -> a + b) pairs  ※ ラムダの引数でパターンマッチする
-sumTo n = foldl (+) 0 [1 .. n]  ※ 部分適用と畳み込みで関数を組み立てる
+sumTo n = foldl (+) 0 [1..n]  ※ 部分適用と畳み込みで関数を組み立てる
 
 @@ advanced
 (>>=) :: Monad m => m a -> (a -> m b) -> m b  ※ モナドの bind の型
